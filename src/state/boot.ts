@@ -247,19 +247,14 @@ export async function signIn(account: AccountMeta): Promise<void> {
   }
 }
 
-export async function switchAccount(id: string): Promise<void> {
+export function switchAccount(id: string): void {
   const account = store.accounts.find((a) => a.id === id);
   if (!account) return;
-  disconnectStream?.();
-  disconnectStream = null;
-  store.stream = "off";
-  store.homeQueue = [];
-  store.notifQueue = [];
-  store.blockedAccounts = [];
-  store.notifBadge = 0;
-  store.me = null;
-  store.instance = null;
-  await signIn(account);
+  store.currentAccountId = id;
+  saveCurrentAccountId();
+  // Account-scoped state (me, instance, streams, prefs) is rebuilt by boot.
+  location.hash = "#/";
+  location.reload();
 }
 
 export async function signOut(): Promise<void> {
@@ -280,7 +275,8 @@ export async function signOut(): Promise<void> {
     store.currentAccountId = next?.id ?? null;
     saveCurrentAccountId();
     if (next) {
-      await signIn(next);
+      location.hash = "#/";
+      location.reload();
       return;
     }
   }
@@ -439,6 +435,7 @@ async function handleOAuthCallback(code: string, state?: string): Promise<boolea
     };
     addAccount(account);
     await signIn(account);
+    if (store.auth !== "authenticated") return false;
     if (previous && previous.accessToken !== accessToken) {
       void revokeToken({
         instance: previous.instance,
@@ -493,6 +490,14 @@ export async function boot(): Promise<void> {
       return;
     }
     history.replaceState(null, "", location.pathname + location.hash);
+    if (handled) {
+      // The callback already initialized the account; do not sign in twice.
+      store.booted = true;
+      const { path } = parseHash();
+      const redirect = authRedirect(path, store.auth);
+      if (redirect) navigate(redirect, { replace: true });
+      return;
+    }
   }
 
   // 3. session

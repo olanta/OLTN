@@ -419,9 +419,7 @@ export function SettingsPage(): JSX.Element {
             class="btn ghost danger"
             onClick={() => {
               if (confirm(t.logoutConfirm)) {
-                void signOut().then(() => {
-                  if (store.auth === "authenticated") navigate("/", { replace: true });
-                });
+                void signOut();
               }
             }}
           >

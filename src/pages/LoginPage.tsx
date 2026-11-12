@@ -2,7 +2,6 @@ import type { JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   buildAuthorizeUrl,
-  exchangeCode,
   fetchInstance,
   makeChallenge,
   makeState,
@@ -15,14 +14,11 @@ import {
   type InstanceSummary,
   type PendingAuth,
 } from "../api/auth";
-import { getRest } from "../api/client";
-import type { AccountMeta } from "../api/types";
 import supportQr from "../assets/support-qr.png";
 import { t } from "../i18n/pt-BR";
-import { sessionRead, sessionRemove, sessionWrite } from "../lib/storage";
-import { navigate } from "../lib/router";
+import { sessionRead, sessionWrite } from "../lib/storage";
 import { store } from "../state/store";
-import { addAccount, signIn } from "../state/boot";
+import { switchAccount } from "../state/boot";
 import { Icon } from "../components/ui/Icon";
 import "./login.css";
 
@@ -49,7 +45,6 @@ export function LoginPage(): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [instance, setInstance] = useState<InstanceSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [exchanging, setExchanging] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const supportRef = useRef<HTMLElement>(null);
 
@@ -68,17 +63,6 @@ export function LoginPage(): JSX.Element {
       window.removeEventListener("keydown", onKey);
     };
   }, [supportOpen]);
-
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== location.origin) return;
-      const data = event.data as { type?: string; code?: string; state?: string };
-      if (data?.type !== "oltn-oauth" || !data.code) return;
-      void completeLogin(data.code, data.state);
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [instance]);
 
   const discover = async (e: Event): Promise<void> => {
     e.preventDefault();
@@ -154,54 +138,6 @@ export function LoginPage(): JSX.Element {
     }
   };
 
-  const completeLogin = async (code: string, state?: string): Promise<void> => {
-    if (exchanging) return;
-    setExchanging(true);
-    const pending = sessionRead<PendingAuth | null>(PENDING_AUTH_KEY, null);
-    if (!pending) {
-      setError(t.errorAuth);
-      setExchanging(false);
-      return;
-    }
-    if (pending.state && state !== pending.state) {
-      console.warn("[oltn] oauth state mismatch");
-      setError(t.errorAuth);
-      setExchanging(false);
-      return;
-    }
-    sessionRemove(PENDING_AUTH_KEY);
-    try {
-      const { accessToken } = await exchangeCode({
-        instance: pending.instance,
-        clientId: pending.clientId,
-        clientSecret: pending.clientSecret,
-        code,
-        codeVerifier: pending.codeVerifier,
-      });
-      const client = getRest(pending.instance, accessToken);
-      const me = await client.v1.accounts.verifyCredentials();
-      const account: AccountMeta = {
-        id: me.id,
-        instance: pending.instance,
-        handle: me.acct.includes("@") ? me.acct : `${me.acct}@${pending.instance}`,
-        displayName: me.displayName || me.username,
-        avatar: me.avatar,
-        accessToken,
-        clientId: pending.clientId,
-        clientSecret: pending.clientSecret,
-        createdAt: Date.now(),
-      };
-      addAccount(account);
-      await signIn(account);
-      navigate("/", { replace: true });
-    } catch (err) {
-      console.warn("[oltn] oauth exchange failed", err);
-      setError(t.errorAuth);
-    } finally {
-      setExchanging(false);
-    }
-  };
-
   return (
     <div class="login-page">
       <main class="login-main">
@@ -270,10 +206,10 @@ export function LoginPage(): JSX.Element {
                     type="button"
                     class="btn primary"
                     onClick={() => void startLogin()}
-                    disabled={busy || exchanging}
+                    disabled={busy}
                   >
-                    {busy || exchanging ? <span class="spinner" /> : null}
-                    {exchanging ? t.loading : t.loginButton}
+                    {busy ? <span class="spinner" /> : null}
+                    {t.loginButton}
                   </button>
                 </div>
               </div>
@@ -289,9 +225,7 @@ export function LoginPage(): JSX.Element {
                     key={account.id}
                     type="button"
                     class="list-row"
-                    onClick={() => {
-                      void signIn(account).then(() => navigate("/", { replace: true }));
-                    }}
+                    onClick={() => switchAccount(account.id)}
                   >
                     <img class="avatar" src={account.avatar} alt="" width={36} height={36} />
                     <div class="row-main">

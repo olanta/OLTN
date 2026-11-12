@@ -16,12 +16,12 @@ export function AccountsPage(): JSX.Element {
   const remove = (id: string): void => {
     const wasCurrent = id === currentId;
     removeAccount(id);
-    if (wasCurrent) {
-      if (store.currentAccountId) {
-        void switchAccount(store.currentAccountId);
-      } else {
-        navigate("/login", { replace: true });
-      }
+    if (!wasCurrent) return;
+    if (store.currentAccountId) {
+      switchAccount(store.currentAccountId);
+    } else {
+      location.hash = "#/login";
+      location.reload();
     }
   };
 
@@ -41,9 +41,7 @@ export function AccountsPage(): JSX.Element {
               <button
                 type="button"
                 class="btn ghost small"
-                onClick={() => {
-                  void switchAccount(account.id).then(() => navigate("/", { replace: true }));
-                }}
+                onClick={() => switchAccount(account.id)}
               >
                 {t.switchAccount}
               </button>

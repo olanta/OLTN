@@ -209,6 +209,14 @@ export interface PendingAuth {
 
 export const PENDING_AUTH_KEY = "pendingAuth";
 
+/** Callback URL used after the popup relays the authorization code. The full
+    reload lets boot() rebuild every account-scoped state from scratch. */
+export function oauthCallbackUrl(code: string, state?: string): string {
+  const params = new URLSearchParams({ code });
+  if (state) params.set("state", state);
+  return `${location.origin}${location.pathname}?${params.toString()}`;
+}
+
 /** Opens the authorization URL (popup with full-redirect fallback). */
 export function openAuthorize(url: string): void {
   const popup = window.open(url, "oltn-oauth", "width=560,height=720");

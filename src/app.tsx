@@ -10,6 +10,7 @@ import { ShortcutsHelp } from "./components/help/ShortcutsHelp";
 import { HelpSheet } from "./components/help/HelpSheet";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { Toasts } from "./components/ui/Toasts";
+import { oauthCallbackUrl } from "./api/auth";
 import { t } from "./i18n/pt-BR";
 import { navigate, RouterProvider } from "./lib/router";
 import { boot } from "./state/boot";
@@ -21,6 +22,18 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     void boot();
+  }, []);
+
+  useEffect(() => {
+    const onOAuth = (event: MessageEvent): void => {
+      if (event.origin !== location.origin) return;
+      const data = event.data as { type?: string; code?: string; state?: string } | null;
+      if (data?.type !== "oltn-oauth" || !data.code) return;
+      // Reload with the code so boot() initializes the chosen account cleanly.
+      window.location.href = oauthCallbackUrl(data.code, data.state);
+    };
+    window.addEventListener("message", onOAuth);
+    return () => window.removeEventListener("message", onOAuth);
   }, []);
 
   useEffect(() => {

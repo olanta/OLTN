@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeInstanceInput } from "../../api/auth";
+import { normalizeInstanceInput, oauthCallbackUrl } from "../../api/auth";
 
 describe("normalizeInstanceInput", () => {
   it("accepts plain hosts", () => {
@@ -32,5 +32,21 @@ describe("normalizeInstanceInput", () => {
     expect(normalizeInstanceInput("")).toBeNull();
     expect(normalizeInstanceInput("@@invalido")).toBeNull();
     expect(normalizeInstanceInput("sem-espaco")).toBeNull();
+  });
+});
+
+describe("oauthCallbackUrl", () => {
+  it("reloads the app with the code and state in the query", () => {
+    const url = new URL(oauthCallbackUrl("a b&c", "state-1"));
+    expect(url.origin).toBe(location.origin);
+    expect(url.pathname).toBe(location.pathname);
+    expect(url.searchParams.get("code")).toBe("a b&c");
+    expect(url.searchParams.get("state")).toBe("state-1");
+    expect(url.hash).toBe("");
+  });
+
+  it("omits an empty state", () => {
+    const url = new URL(oauthCallbackUrl("code"));
+    expect(url.searchParams.has("state")).toBe(false);
   });
 });
