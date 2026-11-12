@@ -21,6 +21,7 @@ import type {
   Status,
 } from "../api/types";
 import { t } from "../i18n/pt-BR";
+import { authRedirect } from "../lib/auth-route";
 import { setFormatLocale } from "../lib/format";
 import { layoutFromSettings } from "../lib/layout";
 import { updatePanelColor, type PanelColor } from "../lib/panel-colors";
@@ -506,9 +507,6 @@ export async function boot(): Promise<void> {
 
   // 4. route guard
   const { path } = parseHash();
-  if (store.auth === "anonymous" && path !== "/login") {
-    navigate("/login", { replace: true });
-  } else if (store.auth === "authenticated" && path === "/login") {
-    navigate("/", { replace: true });
-  }
+  const redirect = authRedirect(path, store.auth);
+  if (redirect) navigate(redirect, { replace: true });
 }

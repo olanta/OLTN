@@ -9,6 +9,7 @@ import { Avatar } from "../components/ui/Avatar";
 import { Sheet } from "../components/ui/Sheet";
 import { t, type TKey } from "../i18n/pt-BR";
 import { focusableCards, nextFocusIndex } from "../lib/deck-focus";
+import { authRedirect } from "../lib/auth-route";
 import { bringToFront, stackOrder } from "../lib/floats";
 import { useHotkeys } from "../lib/hotkeys";
 import { supportsCollections } from "../lib/instance-features";
@@ -834,11 +835,8 @@ export function Routed(): JSX.Element {
 
   useEffect(() => {
     if (!state.booted) return;
-    if (state.auth === "anonymous" && route.path !== "/login") {
-      navigate("/login", { replace: true });
-    } else if (state.auth === "authenticated" && route.path === "/login") {
-      navigate("/", { replace: true });
-    }
+    const redirect = authRedirect(route.path, state.auth);
+    if (redirect) navigate(redirect, { replace: true });
   }, [state.booted, state.auth, route.path]);
 
   const match = matchRoutes(routes, route.path);
