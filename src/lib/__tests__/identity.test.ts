@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Account, RestClient, Status } from "../../api/types";
 import {
+  accountRouteTarget,
   clientFor,
   hrefFor,
   isOwnInstance,
@@ -82,6 +83,9 @@ describe("hrefFor", () => {
 
   it("converts external Mastodon paths, including legacy shapes", () => {
     expect(hrefFor.fromExternalUrl("h.example", "/@user/123")).toBe("/h.example/s/123");
+    expect(hrefFor.fromExternalUrl("h.example", "/@user/01KVZ35N9J9EVCPWCPTJK0DGR")).toBe(
+      "/h.example/s/01KVZ35N9J9EVCPWCPTJK0DGR",
+    );
     expect(hrefFor.fromExternalUrl("h.example", "/users/user/statuses/123/")).toBe(
       "/h.example/s/123",
     );
@@ -91,6 +95,20 @@ describe("hrefFor", () => {
     expect(hrefFor.fromExternalUrl("h.example", "/tag/foo")).toBe("/h.example/t/foo");
     expect(hrefFor.fromExternalUrl("h.example", "/collections/42")).toBe("/h.example/c/42");
     expect(hrefFor.fromExternalUrl("h.example", "/about")).toBeNull();
+  });
+});
+
+describe("accountRouteTarget", () => {
+  it("treats @handles as acct lookups", () => {
+    expect(accountRouteTarget("@alice")).toEqual({ acct: "alice" });
+    expect(accountRouteTarget("@alice@remote.example")).toEqual({ acct: "alice@remote.example" });
+  });
+
+  it("treats numeric and ULID route ids as local ids", () => {
+    expect(accountRouteTarget("123")).toEqual({ id: "123" });
+    expect(accountRouteTarget("01KVZ35N9J9EVCPWCPTJK0DGR")).toEqual({
+      id: "01KVZ35N9J9EVCPWCPTJK0DGR",
+    });
   });
 });
 

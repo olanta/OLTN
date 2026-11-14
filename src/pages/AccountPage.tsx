@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import type { Account, Relationship, Status } from "../api/types";
 import { t } from "../i18n/pt-BR";
 import {
+  accountRouteTarget,
   clientFor,
   hrefFor,
   isOwnInstance,
@@ -59,13 +60,13 @@ function useAccountProfile(instance: string, rawId: string) {
     setError(null);
     const { client } = clientFor(instance);
     const me = currentAccount();
-    const acct = rawId.startsWith("@") ? rawId.slice(1) : rawId;
+    const target = accountRouteTarget(rawId);
     let redirected = false;
     try {
       const resolved =
-        acct.includes("@") || /^\d+$/.test(acct)
-          ? await client.v1.accounts.$select(acct).fetch()
-          : await client.v1.accounts.lookup({ acct });
+        "acct" in target
+          ? await client.v1.accounts.lookup({ acct: target.acct })
+          : await client.v1.accounts.$select(target.id).fetch();
       setAccount(resolved);
       // The relationship lives on the account's instance; the profile may have
       // been loaded from another one, so resolve the local id first.
@@ -87,10 +88,10 @@ function useAccountProfile(instance: string, rawId: string) {
       // Some instances keep the public API behind auth. When the viewer belongs
       // to another instance, resolve the handle locally and open the profile by
       // the id that is valid there instead of failing on the remote API.
-      if (me && me.instance !== instance && !/^\d+$/.test(acct)) {
+      if (me && me.instance !== instance && "acct" in target) {
         const local = await resolveAccountHandle(
           clientFor(me.instance).client,
-          acct.includes("@") ? acct : `${acct}@${instance}`,
+          target.acct.includes("@") ? target.acct : `${target.acct}@${instance}`,
         );
         if (local) {
           redirected = true;

@@ -64,12 +64,12 @@ export const hrefFor = {
     // hashtag: /tags/foo | /tag/foo
     const tag = clean.match(/^\/tags?\/([^/]+)$/);
     if (tag) return hrefFor.tag(tag[1], host);
-    // status: /@user/123 | /users/user/statuses/123
+    // status: /@user/123 | /users/user/statuses/01KVZ...
     const status =
-      clean.match(/^\/@[^/]+\/(\d+)$/) || clean.match(/^\/users\/[^/]+\/statuses\/(\d+)$/);
+      clean.match(/^\/@[^/]+\/([^/]+)$/) || clean.match(/^\/users\/[^/]+\/statuses\/([^/]+)$/);
     if (status) return hrefFor.status(status[1], host);
-    // collection: /collections/123
-    const collection = clean.match(/^\/collections\/([0-9]+)$/);
+    // collection: /collections/123 | /collections/01KVZ...
+    const collection = clean.match(/^\/collections\/([^/]+)$/);
     if (collection) return hrefFor.collection(collection[1], host);
     // account: /@user | /users/user
     const account = clean.match(/^\/@([^/]+)$/) || clean.match(/^\/users\/([^/]+)$/);
@@ -77,6 +77,15 @@ export const hrefFor = {
     return null;
   },
 };
+
+export type AccountRouteTarget = { acct: string } | { id: string };
+
+/** `/a/:id` uses `@handle` for acct links and the raw local id otherwise.
+    Mastodon ids are not necessarily numeric (newer versions use ULIDs), so
+    only the leading `@` tells a handle apart from an id. */
+export function accountRouteTarget(rawId: string): AccountRouteTarget {
+  return rawId.startsWith("@") ? { acct: rawId.slice(1) } : { id: rawId };
+}
 
 /** Instance that originated a cached status (the id is only valid there). */
 export function sourceInstanceFor(key: string, status: Status): string {
