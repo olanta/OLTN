@@ -62,14 +62,7 @@ describe("moveInOrder", () => {
 describe("ensureColumnVisible", () => {
   const shortcut = (id: string): Shortcut => ({ id, type: "home", label: id });
 
-  it("appends at the end when there is room", () => {
-    expect(ensureColumnVisible([shortcut("a")], shortcut("b")).map((s) => s.id)).toEqual([
-      "a",
-      "b",
-    ]);
-  });
-
-  it("with 6 columns, the new one enters the 6th visible position", () => {
+  it("appends without moving existing columns", () => {
     const base = ["a", "b", "c", "d", "e", "f"].map(shortcut);
     expect(ensureColumnVisible(base, shortcut("g")).map((s) => s.id)).toEqual([
       "a",
@@ -77,12 +70,12 @@ describe("ensureColumnVisible", () => {
       "c",
       "d",
       "e",
-      "g",
       "f",
+      "g",
     ]);
   });
 
-  it("brings a hidden column into the visible area", () => {
+  it("does not move an existing column", () => {
     const base = ["a", "b", "c", "d", "e", "f", "notifications"].map(shortcut);
     expect(ensureColumnVisible(base, shortcut("notifications")).map((s) => s.id)).toEqual([
       "a",
@@ -90,14 +83,9 @@ describe("ensureColumnVisible", () => {
       "c",
       "d",
       "e",
-      "notifications",
       "f",
+      "notifications",
     ]);
-  });
-
-  it("changes nothing when the column is already visible", () => {
-    const base = ["a", "b"].map(shortcut);
-    expect(ensureColumnVisible(base, shortcut("a")).map((s) => s.id)).toEqual(["a", "b"]);
   });
 });
 

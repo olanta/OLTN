@@ -34,6 +34,8 @@ export interface MediaUploadState {
   describe: (attachment: MediaAttachment, description: string) => void;
   /** Awaits the pending alt-text updates (call before publishing). */
   flushDescriptions: () => Promise<void>;
+  /** Original file (or a fetched copy for edit/restored attachments). */
+  fileFor: (attachment: MediaAttachment) => Promise<File | null>;
 }
 
 /** Uploads media attachments and GIFs for the composer (max 4 slots). */
@@ -53,6 +55,7 @@ export function useMediaUpload(input: {
   const sentDescriptions = useRef(new Map<string, string>());
   const describeTimers = useRef(new Map<string, number>());
   const latestDescriptions = useRef(new Map<string, string>());
+  const files = useRef(new Map<string, File>());
   const createMedia =
     input.createMedia ??
     ((file: File, description?: string) =>
@@ -104,6 +107,7 @@ export function useMediaUpload(input: {
     setUploading((n) => n + 1);
     try {
       const attachment = await createMedia(file, await defaultDescription(file, description));
+      files.current.set(attachment.id, file);
       input.setMedia((prev) => [...prev, attachment].slice(0, 4));
     } catch (err) {
       console.warn("[oltn] upload failed", err);
@@ -135,5 +139,24 @@ export function useMediaUpload(input: {
     }
   };
 
-  return { uploading, upload, pickGif, describe, flushDescriptions };
+  const fileFor = async (attachment: MediaAttachment): Promise<File | null> => {
+    const local = files.current.get(attachment.id);
+    if (local) return local;
+    const url = attachment.url || attachment.previewUrl;
+    if (!url) return null;
+    try {
+      const res = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const subtype = (blob.type.split("/")[1] || "bin").split("+")[0]?.split(";")[0] || "bin";
+      return new File([blob], `media.${subtype}`, {
+        type: blob.type || "application/octet-stream",
+      });
+    } catch (err) {
+      console.warn("[oltn] media fetch for alt text failed", err);
+      return null;
+    }
+  };
+
+  return { uploading, upload, pickGif, describe, flushDescriptions, fileFor };
 }

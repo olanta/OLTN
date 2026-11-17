@@ -13,7 +13,7 @@ import {
   snapFloatRect,
   stackOrder,
 } from "../lib/floats";
-import { COLUMN_LIMIT, orderColumns } from "../lib/layout";
+import { orderColumns } from "../lib/layout";
 import { beginPointerDrag } from "../lib/pointer-drag";
 import { saveFloatLayout, saveShortcuts } from "../state/boot";
 import { accountNS, currentAccount, store } from "../state/store";
@@ -29,7 +29,7 @@ export function FloatCanvas(): JSX.Element {
   const snap = useSnapshot(store);
   const account = currentAccount();
   const layout = account ? snap.prefs[accountNS(account)] : undefined;
-  const list = orderColumns(snap.shortcuts.slice(0, COLUMN_LIMIT), layout?.columnOrder ?? []);
+  const list = orderColumns(snap.shortcuts, layout?.columnOrder ?? []);
   const rects = layout?.floats ?? {};
   const zOrder = layout?.floatOrder ?? [];
   const colors: Record<string, string> = layout?.colors ?? {};

@@ -400,8 +400,24 @@
   display: flex;
   gap: var(--hairline);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
   background: var(--divider);
+}
+
+.columns::-webkit-scrollbar {
+  height: 8px;
+}
+
+.columns::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+}
+
+.columns::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .column {
@@ -427,10 +443,12 @@
 
   .column {
     flex: 1 1 0;
+    min-width: min(100%, 280px);
   }
 
   .column.with-width {
     flex: 0 0 var(--col-w, var(--column-width));
+    min-width: min(100%, 240px);
   }
 }
 

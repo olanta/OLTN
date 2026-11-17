@@ -16,14 +16,13 @@ import type {
   AccountMeta,
   FloatRect,
   NewsletterSource,
-  Settings,
   Shortcut,
   Status,
 } from "../api/types";
 import { t } from "../i18n/pt-BR";
 import { authRedirect } from "../lib/auth-route";
 import { setFormatLocale } from "../lib/format";
-import { layoutFromSettings } from "../lib/layout";
+import { sanitizeSettings } from "../lib/backup";
 import { updatePanelColor, type PanelColor } from "../lib/panel-colors";
 import { navigate, parseHash } from "../lib/router";
 import {
@@ -35,7 +34,6 @@ import {
   writeJSON,
 } from "../lib/storage";
 import {
-  DEFAULT_SETTINGS,
   accountNS,
   currentAccount,
   pushHomeQueue,
@@ -81,6 +79,9 @@ export function applyAppearance(): void {
   const root = document.documentElement;
   root.dataset["theme"] = store.settings.theme;
   root.dataset["accent"] = store.settings.accent;
+  root.dataset["font"] = store.settings.fontFamily;
+  root.dataset["textDark"] = store.settings.textColorDark;
+  root.dataset["textLight"] = store.settings.textColorLight;
   root.lang = store.settings.language;
   root.style.setProperty("--text-size", `${store.settings.textSize}px`);
   setFormatLocale(store.settings.language);
@@ -466,15 +467,7 @@ export async function boot(): Promise<void> {
   store.accounts = readJSON<AccountMeta[]>("accounts", []);
   store.currentAccountId = readJSON<string | null>("currentAccount", null);
   const storedSettings = readJSON<Record<string, unknown>>("settings", {});
-  const layout = layoutFromSettings(storedSettings, DEFAULT_SETTINGS.layout);
-  delete storedSettings.deckMode;
-  delete storedSettings.layout;
-  delete storedSettings.pomodoro;
-  store.settings = {
-    ...DEFAULT_SETTINGS,
-    ...(storedSettings as Partial<Settings>),
-    layout,
-  };
+  store.settings = sanitizeSettings(storedSettings);
   store.prefs = readJSON<AppState["prefs"]>("prefs", {});
   applyAppearance();
 

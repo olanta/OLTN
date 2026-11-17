@@ -54,10 +54,13 @@
   --glass-border: rgba(255, 255, 255, 0.07);
   --glass-blur: blur(20px) saturate(1.5);
 
-  /* Texto */
-  --text: #e7edf3;
-  --text-2: rgba(231, 237, 243, 0.64);
-  --text-3: rgba(231, 237, 243, 0.55);
+  /* Texto — base chosen per theme in Settings */
+  --text-dark-base: #e7edf3;
+  --text-light-base: #101720;
+  --text-base: var(--text-dark-base);
+  --text: var(--text-base);
+  --text-2: color-mix(in srgb, var(--text-base) 64%, transparent);
+  --text-3: color-mix(in srgb, var(--text-base) 55%, transparent);
   --text-inverse: #06120c;
 
   /* Accent — base chosen in Settings; derived tones */
@@ -108,7 +111,27 @@
   --focus: var(--accent);
 }
 
-/* Accent palettes (Settings). Green is the :root default. */
+html[data-font="atkinson"] {
+  --font-display: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+
+html[data-font="system"] {
+  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-font="serif"] {
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: Georgia, "Times New Roman", serif;
+}
+
+html[data-font="mono"] {
+  --font-display: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-body: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Accent palettes (Settings). Green is the default. */
 html[data-accent="orange"] {
   --accent-base: #f59e0b;
 }
@@ -125,6 +148,35 @@ html[data-accent="pink"] {
   --accent-base: #f472b6;
 }
 
+/* Text color presets, applied only inside the matching theme. */
+html[data-text-dark="white"] {
+  --text-dark-base: #ffffff;
+}
+
+html[data-text-dark="warm"] {
+  --text-dark-base: #f5ead6;
+}
+
+html[data-text-dark="cool"] {
+  --text-dark-base: #dbe7ff;
+}
+
+html[data-text-light="black"] {
+  --text-light-base: #000000;
+}
+
+html[data-text-light="warm"] {
+  --text-light-base: #241c15;
+}
+
+html[data-text-light="cool"] {
+  --text-light-base: #101b2b;
+}
+
+html[data-text-light="gray"] {
+  --text-light-base: #39424e;
+}
+
 /* Light theme — forced or via OS preference (auto) */
 html[data-theme="light"] {
   color-scheme: light;
@@ -139,9 +191,10 @@ html[data-theme="light"] {
   --glass-bg: rgba(255, 255, 255, 0.76);
   --glass-bg-strong: rgba(255, 255, 255, 0.92);
   --glass-border: rgba(0, 0, 0, 0.08);
-  --text: #101720;
-  --text-2: rgba(16, 23, 32, 0.66);
-  --text-3: rgba(16, 23, 32, 0.45);
+  --text-base: var(--text-light-base);
+  --text: var(--text-base);
+  --text-2: color-mix(in srgb, var(--text-base) 66%, transparent);
+  --text-3: color-mix(in srgb, var(--text-base) 60%, transparent);
   --text-inverse: #ffffff;
   --accent: color-mix(in srgb, var(--accent-base) 70%, #000);
   --accent-strong: color-mix(in srgb, var(--accent-base) 58%, #000);
@@ -184,15 +237,16 @@ html[data-theme="light"] {
     --glass-bg: rgba(255, 255, 255, 0.76);
     --glass-bg-strong: rgba(255, 255, 255, 0.92);
     --glass-border: rgba(0, 0, 0, 0.08);
-    --text: #101720;
-    --text-2: rgba(16, 23, 32, 0.66);
-    --text-3: rgba(16, 23, 32, 0.62);
+    --text-base: var(--text-light-base);
+    --text: var(--text-base);
+    --text-2: color-mix(in srgb, var(--text-base) 66%, transparent);
+    --text-3: color-mix(in srgb, var(--text-base) 60%, transparent);
     --text-inverse: #ffffff;
-    --accent: #0d9f6e;
-    --accent-strong: #0b8b61;
-    --accent-soft: rgba(13, 159, 110, 0.12);
-    --accent-soft-2: rgba(13, 159, 110, 0.2);
-    --accent-glow: rgba(13, 159, 110, 0.3);
+    --accent: color-mix(in srgb, var(--accent-base) 70%, #000);
+    --accent-strong: color-mix(in srgb, var(--accent-base) 58%, #000);
+    --accent-soft: color-mix(in srgb, var(--accent-base) 16%, transparent);
+    --accent-soft-2: color-mix(in srgb, var(--accent-base) 26%, transparent);
+    --accent-glow: color-mix(in srgb, var(--accent-base) 32%, transparent);
     --boost: #8b5cf6;
     --boost-soft: rgba(139, 92, 246, 0.12);
     --fav: #e11d48;

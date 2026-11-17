@@ -4,6 +4,7 @@ import { useSnapshot } from "valtio";
 import { getRest } from "../api/client";
 import type { Shortcut, ShortcutType } from "../api/types";
 import { t } from "../i18n/pt-BR";
+import { readAltTextSettings, writeAltTextSettings, type AltTextSettings } from "../lib/alt-text";
 import {
   backupCounts,
   backupFileName,
@@ -19,11 +20,11 @@ import {
   type ImportSummary,
 } from "../lib/import-backup";
 import { navigate } from "../lib/router";
+import { normalizeTextSize, TEXT_SIZES } from "../lib/text-size";
 import { PushSettings } from "../components/settings/PushSettings";
 import { Icon } from "../components/ui/Icon";
 import { PageShell } from "../components/ui/PageShell";
 import {
-  applyAppearance,
   replacePrefs,
   resetColumnLayout,
   saveSettings,
@@ -54,6 +55,7 @@ export function SettingsPage(): JSX.Element {
   const [scType, setScType] = useState<ShortcutType>("hashtag");
   const [scValue, setScValue] = useState("");
   const [scLabel, setScLabel] = useState("");
+  const [altText, setAltText] = useState<AltTextSettings>(() => readAltTextSettings());
   const [exporting, setExporting] = useState(false);
   const [pending, setPending] = useState<Backup | null>(null);
   const [importing, setImporting] = useState<ImportProgress | null>(null);
@@ -75,10 +77,33 @@ export function SettingsPage(): JSX.Element {
     ["pink", t.accentPink, "#f472b6"],
   ] as const;
 
+  const darkTextOptions = [
+    ["soft", t.textSoft, "#e7edf3"],
+    ["white", t.textWhite, "#ffffff"],
+    ["warm", t.textWarm, "#f5ead6"],
+    ["cool", t.textCool, "#dbe7ff"],
+  ] as const;
+
+  const lightTextOptions = [
+    ["charcoal", t.textCharcoal, "#101720"],
+    ["black", t.textBlack, "#000000"],
+    ["warm", t.textWarm, "#241c15"],
+    ["cool", t.textCool, "#101b2b"],
+    ["gray", t.textGray, "#39424e"],
+  ] as const;
+
   const layoutOptions = [
     ["columns", t.layoutColumns],
     ["floats", t.layoutFloats],
     ["social", t.layoutSocial],
+  ] as const;
+
+  const fontOptions = [
+    ["space", t.fontSpaceGrotesk],
+    ["atkinson", t.fontAtkinson],
+    ["system", t.fontSystem],
+    ["serif", t.fontSerif],
+    ["mono", t.fontMono],
   ] as const;
 
   const shortcutTypes: [ShortcutType, string][] = [
@@ -99,6 +124,12 @@ export function SettingsPage(): JSX.Element {
   const update = (patch: Partial<typeof settings>): void => {
     store.settings = { ...store.settings, ...patch };
     saveSettings();
+  };
+
+  const updateAltText = (patch: Partial<AltTextSettings>): void => {
+    const next = { ...altText, ...patch };
+    setAltText(next);
+    writeAltTextSettings(next);
   };
 
   const resetLayout = (): void => {
@@ -218,7 +249,7 @@ export function SettingsPage(): JSX.Element {
     <PageShell title={t.settings} showBack>
       <div class="settings">
         <section class="settings-section">
-          <h2 class="section-title">{t.appearance}</h2>
+          <h1 class="section-title">{t.appearance}</h1>
           <div class="setting-row">
             <span>{t.theme}</span>
             <div class="segmented">
@@ -267,23 +298,6 @@ export function SettingsPage(): JSX.Element {
             </div>
           </div>
           <div class="setting-row">
-            <span>{t.textSize}</span>
-            <input
-              type="range"
-              min="13"
-              max="20"
-              value={settings.textSize}
-              onInput={(e) => {
-                store.settings = {
-                  ...store.settings,
-                  textSize: Number((e.target as HTMLInputElement).value),
-                };
-                applyAppearance();
-              }}
-              onChange={() => saveSettings()}
-            />
-          </div>
-          <div class="setting-row">
             <span>{t.layoutMode}</span>
             <div class="segmented">
               {layoutOptions.map(([value, label]) => (
@@ -309,7 +323,111 @@ export function SettingsPage(): JSX.Element {
         </section>
 
         <section class="settings-section">
-          <h2 class="section-title">{t.connection}</h2>
+          <h1 class="section-title">{t.accessibility}</h1>
+          <div class="setting-row">
+            <span>{t.textSize}</span>
+            <select
+              class="field font-select"
+              value={String(settings.textSize)}
+              onChange={(e) =>
+                update({
+                  textSize: normalizeTextSize(Number((e.target as HTMLSelectElement).value)),
+                })
+              }
+            >
+              {TEXT_SIZES.map((size) => (
+                <option value={size}>{size} px</option>
+              ))}
+            </select>
+          </div>
+          <div class="setting-row">
+            <span>{t.fontFamily}</span>
+            <select
+              class="field font-select"
+              value={settings.fontFamily}
+              onChange={(e) =>
+                update({
+                  fontFamily: (e.target as HTMLSelectElement).value as typeof settings.fontFamily,
+                })
+              }
+            >
+              {fontOptions.map(([value, label]) => (
+                <option value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div class="setting-row text-color-row text-color-row--dark">
+            <span>{t.textColorDark}</span>
+            <div class="accent-swatches">
+              {darkTextOptions.map(([value, label, color]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={settings.textColorDark === value}
+                  aria-label={label}
+                  title={label}
+                  class={`accent-swatch ${settings.textColorDark === value ? "active" : ""}`}
+                  style={`--swatch:${color}`}
+                  onClick={() => update({ textColorDark: value })}
+                />
+              ))}
+            </div>
+          </div>
+          <div class="setting-row text-color-row text-color-row--light">
+            <span>{t.textColorLight}</span>
+            <div class="accent-swatches">
+              {lightTextOptions.map(([value, label, color]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={settings.textColorLight === value}
+                  aria-label={label}
+                  title={label}
+                  class={`accent-swatch ${settings.textColorLight === value ? "active" : ""}`}
+                  style={`--swatch:${color}`}
+                  onClick={() => update({ textColorLight: value })}
+                />
+              ))}
+            </div>
+          </div>
+          <h3 class="sub-section-title">{t.altTextAi}</h3>
+          <p class="muted">{t.altTextAiHint}</p>
+          <div class="alt-text-field">
+            <label htmlFor="alt-text-gemini-key">{t.altTextApiKey}</label>
+            <input
+              id="alt-text-gemini-key"
+              type="password"
+              class="field"
+              autocomplete="off"
+              value={altText.geminiKey}
+              onInput={(e) => updateAltText({ geminiKey: (e.target as HTMLInputElement).value })}
+            />
+          </div>
+          <div class="alt-text-field">
+            <label htmlFor="alt-text-gemini-model">{t.altTextModel}</label>
+            <input
+              id="alt-text-gemini-model"
+              class="field"
+              value={altText.geminiModel}
+              onInput={(e) => updateAltText({ geminiModel: (e.target as HTMLInputElement).value })}
+            />
+          </div>
+          <div class="alt-text-tutorial">
+            <p>{t.altTextGeminiTutorial}</p>
+            <a
+              class="alt-text-key-link"
+              href="https://aistudio.google.com/api-keys"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon name="external-link-line" size={14} />
+              {t.altTextGeminiTutorialLink}
+            </a>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h1 class="section-title">{t.connection}</h1>
           <div class="setting-row">
             <span>{t.autoStream}</span>
             <input
@@ -330,7 +448,7 @@ export function SettingsPage(): JSX.Element {
         <PushSettings />
 
         <section class="settings-section">
-          <h2 class="section-title">{t.media}</h2>
+          <h1 class="section-title">{t.media}</h1>
           <div class="setting-row">
             <span>{t.autoplayGifs}</span>
             <input
@@ -348,7 +466,7 @@ export function SettingsPage(): JSX.Element {
         </section>
 
         <section class="settings-section">
-          <h2 class="section-title">{t.shortcuts}</h2>
+          <h1 class="section-title">{t.shortcuts}</h1>
           <p class="muted">{t.shortcutsHint}</p>
           <div class="shortcut-list">
             {shortcuts.map((shortcut) => (
@@ -400,7 +518,7 @@ export function SettingsPage(): JSX.Element {
         </section>
 
         <section class="settings-section">
-          <h2 class="section-title">{t.keyboard}</h2>
+          <h1 class="section-title">{t.keyboard}</h1>
           <p class="muted">{t.keyboardHint}</p>
           <button type="button" class="btn ghost" onClick={() => (store.ui.shortcutsHelp = true)}>
             <Icon name="keyboard-line" size={16} />
@@ -409,7 +527,7 @@ export function SettingsPage(): JSX.Element {
         </section>
 
         <section class="settings-section">
-          <h2 class="section-title">{t.accounts}</h2>
+          <h1 class="section-title">{t.accounts}</h1>
           <button type="button" class="btn ghost" onClick={() => navigate("/accounts")}>
             <Icon name="switch-line" size={16} />
             {t.accounts}
@@ -429,7 +547,7 @@ export function SettingsPage(): JSX.Element {
         </section>
 
         <section class="settings-section">
-          <h2 class="section-title">{t.data}</h2>
+          <h1 class="section-title">{t.data}</h1>
           <p class="muted">{t.dataHint}</p>
           <div class="btn-row">
             <button
@@ -522,7 +640,7 @@ export function SettingsPage(): JSX.Element {
         </section>
 
         <section class="settings-section">
-          <h2 class="section-title">{t.about}</h2>
+          <h1 class="section-title">{t.about}</h1>
           <p class="muted">{t.aboutText}</p>
           <dl class="version-info">
             <div>

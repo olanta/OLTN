@@ -78,6 +78,9 @@ export interface AppState {
 export const DEFAULT_SETTINGS: Settings = {
   theme: "dark",
   accent: "green",
+  fontFamily: "space",
+  textColorDark: "soft",
+  textColorLight: "charcoal",
   language: "en",
   textSize: 16,
   layout: "columns",

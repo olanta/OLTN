@@ -16,8 +16,6 @@ import { supportsCollections } from "../lib/instance-features";
 import { beginPointerDrag, dropTarget, type DropTarget } from "../lib/pointer-drag";
 import {
   clampWidth,
-  COLUMN_LIMIT,
-  ensureColumnVisible,
   moveInOrder,
   orderColumns,
   routeMode,
@@ -304,10 +302,11 @@ function Rail(): JSX.Element | null {
 
   if (!account && state.auth !== "authenticated") return null;
 
-  /** Shortcuts in the visible area (first COLUMN_LIMIT entries). */
-  const visibleIndex = (type: ShortcutType): number => {
-    const index = store.shortcuts.findIndex((s) => s.type === type);
-    return index >= 0 && index < COLUMN_LIMIT ? index : -1;
+  const columnOnScreen = (id: string): boolean => {
+    const el = document.querySelector<HTMLElement>(`[data-shortcut-id="${CSS.escape(id)}"]`);
+    if (!el) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.right > 0 && rect.left < window.innerWidth;
   };
 
   const collectionsEnabled = supportsCollections(state.instance);
@@ -318,46 +317,38 @@ function Rail(): JSX.Element | null {
   const openColumn = (item: (typeof NAV_ITEMS)[number]): void => {
     const type = item.column;
     if (!type) return;
-    const visible = visibleIndex(type);
-    if (visible >= 0) {
-      saveShortcuts(store.shortcuts.filter((_, index) => index !== visible));
+    const existingIndex = store.shortcuts.findIndex((s) => s.type === type);
+    if (existingIndex >= 0) {
+      const id = store.shortcuts[existingIndex].id;
+      if (columnOnScreen(id)) {
+        saveShortcuts(store.shortcuts.filter((_, index) => index !== existingIndex));
+      } else {
+        scrollToColumn(id);
+      }
       return;
     }
-    const existing = store.shortcuts.find((s) => s.type === type);
-    const shortcut = existing ?? { id: type, type, label: t[item.labelKey] };
-    const next = ensureColumnVisible(store.shortcuts, shortcut);
-    const changed =
-      next.length !== store.shortcuts.length ||
-      next.some((s, index) => s.id !== store.shortcuts[index]?.id);
-    if (changed) saveShortcuts(next);
-    // Waits for the render when order/list changed before scrolling to the column.
-    window.setTimeout(() => scrollToColumn(shortcut.id), changed ? 60 : 0);
+    const shortcut = { id: type, type, label: t[item.labelKey] };
+    saveShortcuts([...store.shortcuts, shortcut]);
+    window.setTimeout(() => scrollToColumn(shortcut.id), 60);
   };
 
   const openFloat = (item: (typeof NAV_ITEMS)[number]): void => {
     const type = item.column;
     if (!type || !account) return;
-    const visible = visibleIndex(type);
-    if (visible >= 0) {
-      saveShortcuts(store.shortcuts.filter((_, index) => index !== visible));
+    const existingIndex = store.shortcuts.findIndex((s) => s.type === type);
+    if (existingIndex >= 0) {
+      saveShortcuts(store.shortcuts.filter((_, index) => index !== existingIndex));
       return;
     }
-    const existing = store.shortcuts.find((s) => s.type === type);
-    const shortcut = existing ?? { id: type, type, label: t[item.labelKey] };
-    const next = ensureColumnVisible(store.shortcuts, shortcut);
-    const changed =
-      next.length !== store.shortcuts.length ||
-      next.some((s, index) => s.id !== store.shortcuts[index]?.id);
-    if (changed) saveShortcuts(next);
+    const shortcut = { id: type, type, label: t[item.labelKey] };
+    saveShortcuts([...store.shortcuts, shortcut]);
     bringShortcutFront(shortcut.id);
   };
 
   const bringShortcutFront = (id: string): void => {
     if (!account) return;
     const prev = store.prefs[accountNS(account)];
-    const ids = orderColumns(store.shortcuts.slice(0, COLUMN_LIMIT), prev?.columnOrder ?? []).map(
-      (s) => s.id,
-    );
+    const ids = orderColumns(store.shortcuts, prev?.columnOrder ?? []).map((s) => s.id);
     const order = stackOrder(prev?.floatOrder ?? [], ids);
     if (order[order.length - 1] !== id) {
       saveFloatLayout(prev?.floats ?? {}, bringToFront(order, id));
@@ -365,7 +356,9 @@ function Rail(): JSX.Element | null {
   };
 
   const navActive = (item: (typeof NAV_ITEMS)[number]): boolean => {
-    if (mode !== "page" && item.column) return visibleIndex(item.column) >= 0;
+    if (mode !== "page" && item.column) {
+      return store.shortcuts.some((s) => s.type === item.column);
+    }
     if (item.popup === "search") return pathActive(item.href) || state.ui.searchOpen;
     return pathActive(item.href);
   };
@@ -659,7 +652,7 @@ export function MultiColumns(): JSX.Element {
   const layout = account ? snap.prefs[accountNS(account)] : undefined;
   const widths: Record<string, number> = layout?.columnWidths ?? {};
   const colors: Record<string, string> = layout?.colors ?? {};
-  const list = orderColumns(shortcuts.slice(0, COLUMN_LIMIT), layout?.columnOrder ?? []);
+  const list = orderColumns(shortcuts, layout?.columnOrder ?? []);
 
   useEffect(() => () => activeDndCleanup?.(), []);
 

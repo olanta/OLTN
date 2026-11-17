@@ -96,8 +96,9 @@ for maintainers.
 - API access goes through `src/api/`: `getRest` caches a masto client per
   `instance|token`, and `connectUserStream` wraps the websocket. Prefer these
   wrappers over new raw `fetch` calls.
-- The authenticated home route (`/`) is a multi-column deck (up to 6 pinned
-  shortcuts; order and widths persisted per account in `store.prefs`). With
+- The authenticated home route (`/`) is a multi-column deck (all pinned
+  shortcuts; the deck scrolls horizontally. Order and widths persisted per
+  account in `store.prefs`). With
   deck mode off, the home route renders the same shortcuts as floating panels
   (position, size, stacking and color also persisted per account). All other
   routes render a page from `src/pages/`.

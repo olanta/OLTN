@@ -82,6 +82,9 @@ export interface AccountMeta {
 
 export type ThemeSetting = "dark" | "light" | "auto";
 export type AccentSetting = "green" | "orange" | "purple" | "blue" | "pink";
+export type FontSetting = "space" | "atkinson" | "system" | "serif" | "mono";
+export type DarkTextColor = "soft" | "white" | "warm" | "cool";
+export type LightTextColor = "charcoal" | "black" | "warm" | "cool" | "gray";
 export type LanguageSetting = "pt-BR" | "en";
 
 export type ShortcutType =
@@ -110,7 +113,11 @@ export type LayoutMode = "columns" | "floats" | "social";
 
 export interface Settings {
   theme: ThemeSetting;
+  /** Legacy single accent (kept for old backups/settings). */
   accent: AccentSetting;
+  fontFamily: FontSetting;
+  textColorDark: DarkTextColor;
+  textColorLight: LightTextColor;
   language: LanguageSetting;
   textSize: number;
   /** Desktop layout: deck columns, floating panels or an X-like social shell. */

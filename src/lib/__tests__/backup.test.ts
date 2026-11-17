@@ -94,7 +94,7 @@ describe("parseBackup", () => {
     });
     expect(backup.settings.theme).toBe(DEFAULT_SETTINGS.theme);
     expect(backup.settings.accent).toBe("purple");
-    expect(backup.settings.textSize).toBe(20);
+    expect(backup.settings.textSize).toBe(24);
   });
 
   it("migrates the legacy deckMode field from old backups", () => {
@@ -109,6 +109,9 @@ describe("sanitizeSettings", () => {
     const settings = sanitizeSettings({
       theme: "light",
       accent: "purple",
+      fontFamily: "atkinson",
+      textColorDark: "warm",
+      textColorLight: "cool",
       language: "pt-BR",
       textSize: 15,
       layout: "floats",
@@ -118,8 +121,11 @@ describe("sanitizeSettings", () => {
     });
     expect(settings.theme).toBe("light");
     expect(settings.accent).toBe("purple");
+    expect(settings.fontFamily).toBe("atkinson");
+    expect(settings.textColorDark).toBe("warm");
+    expect(settings.textColorLight).toBe("cool");
     expect(settings.language).toBe("pt-BR");
-    expect(settings.textSize).toBe(15);
+    expect(settings.textSize).toBe(16);
     expect(settings.layout).toBe("floats");
     expect(settings.navOrder).toEqual(["/", "/settings"]);
   });

@@ -4,9 +4,6 @@ import type { LayoutMode, Shortcut } from "../api/types";
 
 export const COLUMN_MIN = 240;
 export const COLUMN_MAX = 720;
-/** Maximum columns rendered in the deck. */
-export const COLUMN_LIMIT = 6;
-
 export function clampNumber(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
@@ -73,20 +70,10 @@ export function moveInOrder(
   return rest;
 }
 
-/** Ensures the column is among the first `limit` ones (visible area),
-    moving it to the last visible position when needed. */
+/** Adds a shortcut without moving existing columns; the deck scrolls. */
 export function ensureColumnVisible(
   shortcuts: readonly Shortcut[],
   shortcut: Shortcut,
-  limit = COLUMN_LIMIT,
 ): Shortcut[] {
-  const next = shortcuts.some((s) => s.id === shortcut.id)
-    ? [...shortcuts]
-    : [...shortcuts, shortcut];
-  const index = next.findIndex((s) => s.id === shortcut.id);
-  if (index >= limit) {
-    next.splice(index, 1);
-    next.splice(limit - 1, 0, shortcut);
-  }
-  return next;
+  return shortcuts.some((s) => s.id === shortcut.id) ? [...shortcuts] : [...shortcuts, shortcut];
 }

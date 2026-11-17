@@ -4,6 +4,14 @@ import { useSnapshot } from "valtio";
 import { getRest } from "../../api/client";
 import type { ComposeIntent, ComposeVisibility, MediaAttachment } from "../../api/types";
 import { t } from "../../i18n/pt-BR";
+import {
+  AltTextError,
+  altTextConfigured,
+  altTextErrorMessage,
+  altTextLanguage,
+  generateAltText,
+  readAltTextSettings,
+} from "../../lib/alt-text";
 import { extractCodeBlocks } from "../../lib/code-image";
 import { userMessageForError } from "../../lib/errors";
 import { GIPHY_PUBLIC_KEY } from "../../lib/giphy";
@@ -151,6 +159,7 @@ function ComposeInner({ intent }: { intent: ComposeIntent }): JSX.Element {
   const [sensitive, setSensitive] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const [poll, setPoll] = useState<PublishPoll | null>(null);
+  const [describingId, setDescribingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [contextReady, setContextReady] = useState(intent.mode === "new");
   const [charLimit, setCharLimit] = useState(CHAR_LIMIT);
@@ -270,6 +279,32 @@ function ComposeInner({ intent }: { intent: ComposeIntent }): JSX.Element {
     if (!poll) setMedia([]);
   };
 
+  const describeWithAi = async (index: number): Promise<void> => {
+    const item = media[index];
+    if (!item || describingId) return;
+    const settings = readAltTextSettings();
+    if (!altTextConfigured(settings)) {
+      toast(t.altTextConfigure, "error");
+      return;
+    }
+    setDescribingId(item.id);
+    try {
+      const file = await uploader.fileFor(item);
+      if (!file) throw new AltTextError("unsupported");
+      const description = await generateAltText(file, {
+        settings,
+        language: altTextLanguage(store.settings.language),
+      });
+      uploader.describe(item, description);
+    } catch (err) {
+      console.warn("[oltn] alt text generation failed", err);
+      toast(altTextErrorMessage(err), "error");
+    } finally {
+      setDescribingId(null);
+    }
+  };
+  const altTextReady = altTextConfigured(readAltTextSettings());
+
   /* draft (new mode); a mention prefill starts a fresh composer and leaves
      the saved draft untouched until the user edits it. */
   useEffect(() => {
@@ -354,6 +389,7 @@ function ComposeInner({ intent }: { intent: ComposeIntent }): JSX.Element {
     !busy &&
     contextReady &&
     !uploader.uploading &&
+    !describingId &&
     (text.trim().length > 0 || media.length > 0) &&
     (isEdit || remaining >= 0) &&
     pollReady &&
@@ -502,6 +538,9 @@ function ComposeInner({ intent }: { intent: ComposeIntent }): JSX.Element {
             const item = media[index];
             if (item) uploader.describe(item, value);
           }}
+          onDescribe={(index) => void describeWithAi(index)}
+          describingId={describingId}
+          altTextReady={altTextReady}
           onRemove={(index) => setMedia((prev) => prev.filter((_, i) => i !== index))}
         />
         <ComposeUploading count={uploader.uploading} />

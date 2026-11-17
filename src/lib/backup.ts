@@ -12,6 +12,7 @@ import type {
 import { PANEL_COLORS } from "./panel-colors";
 import { layoutFromSettings } from "./layout";
 import { DEFAULT_SETTINGS, type AccountPrefs } from "../state/store";
+import { normalizeTextSize } from "./text-size";
 
 export const BACKUP_FORMAT = "oltn-backup";
 export const BACKUP_VERSION = 1;
@@ -71,6 +72,9 @@ const LIMITS = {
 
 const THEMES = new Set<string>(["dark", "light", "auto"]);
 const ACCENTS = new Set<string>(PANEL_COLORS);
+const FONTS = new Set<string>(["space", "atkinson", "system", "serif", "mono"]);
+const DARK_TEXT_COLORS = new Set<string>(["soft", "white", "warm", "cool"]);
+const LIGHT_TEXT_COLORS = new Set<string>(["charcoal", "black", "warm", "cool", "gray"]);
 const LANGUAGES = new Set<string>(["en", "pt-BR"]);
 const SHORTCUT_TYPES = new Set([
   "home",
@@ -95,11 +99,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function textOf(value: unknown): string | null {
   return typeof value === "string" ? value : null;
-}
-
-function clampInt(value: unknown, min: number, max: number, fallback: number): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
-  return Math.min(max, Math.max(min, Math.round(value)));
 }
 
 /** Full lowercase @user@instance handle (local accts get the source instance). */
@@ -158,15 +157,25 @@ export function sanitizeSettings(value: unknown): Settings {
   const navOrder = Array.isArray(value.navOrder)
     ? value.navOrder.filter((entry): entry is string => typeof entry === "string").slice(0, 50)
     : base.navOrder;
+  const accent = ACCENTS.has(value.accent as string)
+    ? (value.accent as Settings["accent"])
+    : base.accent;
   return {
     theme: THEMES.has(value.theme as string) ? (value.theme as Settings["theme"]) : base.theme,
-    accent: ACCENTS.has(value.accent as string)
-      ? (value.accent as Settings["accent"])
-      : base.accent,
+    accent,
+    fontFamily: FONTS.has(value.fontFamily as string)
+      ? (value.fontFamily as Settings["fontFamily"])
+      : base.fontFamily,
+    textColorDark: DARK_TEXT_COLORS.has(value.textColorDark as string)
+      ? (value.textColorDark as Settings["textColorDark"])
+      : base.textColorDark,
+    textColorLight: LIGHT_TEXT_COLORS.has(value.textColorLight as string)
+      ? (value.textColorLight as Settings["textColorLight"])
+      : base.textColorLight,
     language: LANGUAGES.has(value.language as string)
       ? (value.language as Settings["language"])
       : base.language,
-    textSize: clampInt(value.textSize, 13, 20, base.textSize),
+    textSize: normalizeTextSize(value.textSize),
     layout: layoutFromSettings(value, base.layout),
     autoStream: typeof value.autoStream === "boolean" ? value.autoStream : base.autoStream,
     autoplayGifs: typeof value.autoplayGifs === "boolean" ? value.autoplayGifs : base.autoplayGifs,
