@@ -21,6 +21,7 @@ import {
 } from "../lib/import-backup";
 import { navigate } from "../lib/router";
 import { normalizeTextSize, TEXT_SIZES } from "../lib/text-size";
+import { CleanupSettings } from "../components/settings/CleanupSettings";
 import { PushSettings } from "../components/settings/PushSettings";
 import { Icon } from "../components/ui/Icon";
 import { PageShell } from "../components/ui/PageShell";
@@ -464,6 +465,8 @@ export function SettingsPage(): JSX.Element {
           </div>
           <p class="muted">{t.autoplayGifsHint}</p>
         </section>
+
+        <CleanupSettings />
 
         <section class="settings-section">
           <h1 class="section-title">{t.shortcuts}</h1>

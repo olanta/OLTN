@@ -1,4 +1,5 @@
 import type { JSX } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { getRest } from "../../api/client";
 import type { Account, Status, Tag } from "../../api/types";
@@ -10,7 +11,11 @@ import { Avatar } from "../ui/Avatar";
 import { Icon } from "../ui/Icon";
 import { currentAccount, putStatuses, statusKey } from "../../state/store";
 
-type SearchTab = "accounts" | "hashtags" | "statuses";
+const DiscoverPanel = lazy(() =>
+  import("./DiscoverPanel").then((module) => ({ default: module.DiscoverPanel })),
+);
+
+type SearchTab = "discover" | "accounts" | "hashtags" | "statuses";
 
 interface SearchCoreProps {
   initialQuery?: string;
@@ -191,6 +196,19 @@ function SearchResults({
   onGo: (href: string) => void;
   onRetry: () => void;
 }): JSX.Element {
+  if (tab === "discover") {
+    return (
+      <Suspense
+        fallback={
+          <div class="center-state">
+            <span class="spinner" />
+          </div>
+        }
+      >
+        <DiscoverPanel onGo={onGo} />
+      </Suspense>
+    );
+  }
   if (!query) return <SearchCenterState icon="search-2-line" title={t.emptySearch} />;
   if (results.loading) {
     return (
@@ -219,6 +237,7 @@ function SearchTabs({
   onTab: (tab: SearchTab) => void;
 }): JSX.Element {
   const tabs: [SearchTab, string][] = [
+    ["discover", t.discover],
     ["accounts", t.profile],
     ["hashtags", t.hashtags],
     ["statuses", t.posts],
@@ -242,7 +261,7 @@ function SearchTabs({
 export function SearchCore({ initialQuery = "", onNavigate }: SearchCoreProps): JSX.Element {
   const [input, setInput] = useState(initialQuery);
   const [q, setQ] = useState(initialQuery);
-  const [tab, setTab] = useState<SearchTab>("accounts");
+  const [tab, setTab] = useState<SearchTab>(initialQuery.trim() ? "accounts" : "discover");
   const [tick, setTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const results = useSearchResults(q, tick);
@@ -263,7 +282,9 @@ export function SearchCore({ initialQuery = "", onNavigate }: SearchCoreProps): 
         class="search-form"
         onSubmit={(e) => {
           e.preventDefault();
-          setQ(input.trim());
+          const value = input.trim();
+          setQ(value);
+          setTab(value ? "accounts" : "discover");
         }}
       >
         <div class="search-box">
@@ -271,7 +292,7 @@ export function SearchCore({ initialQuery = "", onNavigate }: SearchCoreProps): 
           <input
             ref={inputRef}
             class="field"
-            placeholder={t.instancePlaceholder}
+            placeholder={t.searchPlaceholder}
             value={input}
             onInput={(e) => setInput((e.target as HTMLInputElement).value)}
           />

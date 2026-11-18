@@ -151,6 +151,26 @@ describe("sanitizePrefs", () => {
     expect(prefs.colors).toEqual({ home: "purple" });
   });
 
+  it("clamps cleanup policies from backups", () => {
+    const prefs = sanitizePrefs({
+      cleanup: { enabled: true, minStatusAge: 999999999, minFavourites: -10 },
+      cleanupLastRun: 1234.6,
+      cleanupRateLimitedUntil: 5678.2,
+      cleanupInspectedThrough: 42.9,
+      cleanupResumePending: true,
+      cleanupCursor: { maxId: "100", cutoff: 123.4, floor: 0 },
+    });
+    expect(prefs.cleanup?.enabled).toBe(true);
+    expect(prefs.cleanup?.minStatusAge).toBe(63113904);
+    expect(prefs.cleanup?.minFavourites).toBe(0);
+    expect(prefs.cleanup?.keepPinned).toBe(true);
+    expect(prefs.cleanupLastRun).toBe(1235);
+    expect(prefs.cleanupRateLimitedUntil).toBe(5678);
+    expect(prefs.cleanupInspectedThrough).toBe(43);
+    expect(prefs.cleanupResumePending).toBe(true);
+    expect(prefs.cleanupCursor).toEqual({ maxId: "100", cutoff: 123, floor: 0 });
+  });
+
   it("drops unknown and removed preference keys", () => {
     const prefs = sanitizePrefs({ shortcuts: [], evil: true, savedLayouts: [] });
     expect(Object.keys(prefs)).toEqual(["shortcuts"]);

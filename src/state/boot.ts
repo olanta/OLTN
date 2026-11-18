@@ -14,6 +14,8 @@ import { connectUserStream, getRest, getInstanceInfo } from "../api/client";
 import type {
   AccentSetting,
   AccountMeta,
+  CleanupCursor,
+  CleanupPolicy,
   FloatRect,
   NewsletterSource,
   Shortcut,
@@ -23,6 +25,16 @@ import { t } from "../i18n/pt-BR";
 import { authRedirect } from "../lib/auth-route";
 import { setFormatLocale } from "../lib/format";
 import { sanitizeSettings } from "../lib/backup";
+import {
+  CLEANUP_INTERVAL_MS,
+  cleanupCooldownActive,
+  cleanupCooldownUntil,
+  cleanupDue,
+  cleanupPolicyWidened,
+  normalizeCleanupPolicy,
+  runCleanup,
+} from "../lib/cleanup";
+import { clampWidth } from "../lib/layout";
 import { updatePanelColor, type PanelColor } from "../lib/panel-colors";
 import { navigate, parseHash } from "../lib/router";
 import {
@@ -42,6 +54,7 @@ import {
   putStatuses,
   removeStatusById,
   store,
+  toast,
   type AccountPrefs,
   type AppState,
 } from "./store";
@@ -126,13 +139,143 @@ export function resolveShortcuts(): void {
     : defaultShortcuts().map((s) => ({ ...s }));
 }
 
+function updatePrefsFor(account: AccountMeta, patch: Partial<AccountPrefs>): void {
+  const ns = accountNS(account);
+  store.prefs[ns] = { ...(store.prefs[ns] ?? { shortcuts: [] }), ...patch };
+  savePrefs();
+}
+
 /** Single writer for the current account's prefs (one field per caller). */
 function updatePrefs(patch: Partial<AccountPrefs>): void {
   const account = currentAccount();
   if (!account) return;
-  const ns = accountNS(account);
-  store.prefs[ns] = { ...(store.prefs[ns] ?? { shortcuts: [] }), ...patch };
-  savePrefs();
+  updatePrefsFor(account, patch);
+}
+
+export function saveCleanupPolicy(policy: CleanupPolicy): void {
+  const account = currentAccount();
+  if (!account) return;
+  const stored = store.prefs[accountNS(account)]?.cleanup;
+  const previous = stored ? normalizeCleanupPolicy(stored) : undefined;
+  const next = normalizeCleanupPolicy(policy);
+  const patch: Partial<AccountPrefs> = { cleanup: next };
+  const widened = !!previous && cleanupPolicyWidened(previous, next);
+  const ageWidened = !!previous && next.minStatusAge < previous.minStatusAge;
+  if (widened) {
+    patch.cleanupCursor = undefined;
+    patch.cleanupInspectedThrough = 0;
+  } else if (ageWidened) {
+    patch.cleanupCursor = undefined;
+  }
+  updatePrefs(patch);
+  if (next.enabled && (!previous?.enabled || widened || ageWidened)) {
+    scheduleCleanup(account, 1000);
+  }
+}
+
+export function saveCleanupRunFor(
+  account: AccountMeta,
+  lastRun: number,
+  rateLimitedUntil: number,
+  cursor: CleanupCursor | undefined,
+  inspectedThrough: number | undefined,
+  resumePending: boolean,
+): void {
+  updatePrefsFor(account, {
+    cleanupLastRun: lastRun,
+    cleanupRateLimitedUntil: rateLimitedUntil,
+    cleanupCursor: cursor,
+    cleanupInspectedThrough: inspectedThrough,
+    cleanupResumePending: resumePending,
+  });
+}
+
+/** Keep read-only continuation well below the API's general rate limit. */
+const CLEANUP_SCAN_RETRY_MS = 2 * 60 * 1000;
+let cleanupTimer: number | null = null;
+const cleanupInFlight = new Set<string>();
+
+function clearCleanupTimer(): void {
+  if (cleanupTimer !== null) {
+    window.clearTimeout(cleanupTimer);
+    cleanupTimer = null;
+  }
+}
+
+function scheduleCleanup(account: AccountMeta, delay: number): void {
+  if (currentAccount()?.id !== account.id) return;
+  clearCleanupTimer();
+  cleanupTimer = window.setTimeout(
+    () => {
+      cleanupTimer = null;
+      const current = currentAccount();
+      if (!current || current.id !== account.id) return;
+      void runCleanupBatch(current, false);
+    },
+    Math.max(1000, delay),
+  );
+}
+
+async function runCleanupBatch(account: AccountMeta, dueOnly: boolean): Promise<void> {
+  if (cleanupInFlight.has(account.id)) return;
+  clearCleanupTimer();
+  const prefs = store.prefs[accountNS(account)];
+  const policy = normalizeCleanupPolicy(prefs?.cleanup);
+  if (!policy.enabled) return;
+
+  const hasPending = !!prefs?.cleanupCursor || !!prefs?.cleanupResumePending;
+  const cooldown = prefs?.cleanupRateLimitedUntil;
+  if (dueOnly && !hasPending && !cleanupCooldownActive(cooldown)) {
+    if (!cleanupDue(policy, prefs?.cleanupLastRun)) {
+      scheduleCleanup(account, (prefs?.cleanupLastRun ?? 0) + CLEANUP_INTERVAL_MS - Date.now());
+      return;
+    }
+  }
+  if (cleanupCooldownActive(cooldown)) {
+    scheduleCleanup(account, (cooldown ?? 0) - Date.now() + 1000);
+    return;
+  }
+
+  cleanupInFlight.add(account.id);
+  try {
+    const result = await runCleanup({
+      client: getRest(account.instance, account.accessToken),
+      accountId: account.id,
+      policy,
+      state: {
+        cursor: prefs?.cleanupCursor,
+        inspectedThrough: prefs?.cleanupInspectedThrough,
+      },
+      onDeleted: (status) => removeStatusById(account.instance, status.id),
+    });
+    const at = Date.now();
+    const until = cleanupCooldownUntil(result, at);
+    saveCleanupRunFor(
+      account,
+      at,
+      until,
+      result.cursor,
+      result.inspectedThrough,
+      !!(result.cursor || result.rateLimited),
+    );
+    if (result.deleted > 0) store.ui.feedsRevision += 1;
+    if (result.rateLimited) {
+      toast(t.cleanupRateLimited, "error");
+    } else if (result.deleted > 0) {
+      const wait = result.cursor ? ` · ${t.cleanupBatchWait}` : "";
+      toast(`${t.cleanupDeletedPosts}: ${result.deleted}${wait}`, "ok");
+    }
+    if (result.cursor || result.rateLimited) {
+      scheduleCleanup(account, until > at ? until - at + 1000 : CLEANUP_SCAN_RETRY_MS);
+    } else {
+      scheduleCleanup(account, CLEANUP_INTERVAL_MS);
+    }
+  } catch (err) {
+    console.warn("[oltn] automated cleanup failed", err);
+    scheduleCleanup(account, CLEANUP_INTERVAL_MS);
+  } finally {
+    cleanupInFlight.delete(account.id);
+  }
 }
 
 export function saveShortcuts(shortcuts: Shortcut[]): void {
@@ -235,6 +378,7 @@ export async function signIn(account: AccountMeta): Promise<void> {
     store.me = me;
     store.instance = instance;
     store.auth = "authenticated";
+    void runCleanupBatch(account, true);
     if (store.settings.autoStream) {
       connectStream(account, instance.streamingApi ?? null);
     } else {
@@ -259,6 +403,7 @@ export function switchAccount(id: string): void {
 }
 
 export async function signOut(): Promise<void> {
+  clearCleanupTimer();
   const account = currentAccount();
   disconnectStream?.();
   disconnectStream = null;
@@ -468,7 +613,14 @@ export async function boot(): Promise<void> {
   store.currentAccountId = readJSON<string | null>("currentAccount", null);
   const storedSettings = readJSON<Record<string, unknown>>("settings", {});
   store.settings = sanitizeSettings(storedSettings);
-  store.prefs = readJSON<AppState["prefs"]>("prefs", {});
+  const storedPrefs = readJSON<AppState["prefs"]>("prefs", {});
+  for (const scope of Object.values(storedPrefs)) {
+    if (!scope.columnWidths) continue;
+    for (const [id, width] of Object.entries(scope.columnWidths)) {
+      scope.columnWidths[id] = clampWidth(width);
+    }
+  }
+  store.prefs = storedPrefs;
   applyAppearance();
 
   // 2. oauth callback (?code= may be in search or hash)

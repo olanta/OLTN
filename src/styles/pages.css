@@ -277,6 +277,141 @@
   padding-inline-start: 42px;
 }
 
+.discover-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding-bottom: var(--s5);
+}
+
+.discover-intro {
+  padding: var(--s3) var(--s4) 0;
+}
+
+.discover-intro h2 {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.discover-intro p {
+  margin-top: 4px;
+  font-size: 0.84rem;
+}
+
+.discover-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 var(--s4);
+}
+
+.discover-category {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: var(--hairline) solid var(--divider);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.discover-category:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.discover-category.active {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.discover-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: 0 var(--s4);
+}
+
+.discover-results .sub-section-title {
+  margin: var(--s2) 0 0;
+}
+
+.discover-list {
+  border-top: var(--hairline) solid var(--divider);
+}
+
+.discover-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: var(--hairline) solid var(--divider);
+}
+
+.discover-account-main {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+}
+
+.discover-account-main .row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.discover-account-main .row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.discover-bio {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.discover-followers {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.discover-account .btn {
+  flex-shrink: 0;
+  margin-top: 2px;
+  margin-inline-start: auto;
+}
+
+@media (max-width: 30em) {
+  .discover-intro,
+  .discover-categories,
+  .discover-results {
+    padding-inline: var(--s3);
+  }
+}
+
 /* ---------------- lists / filters ---------------- */
 
 .list-create,
@@ -398,6 +533,63 @@ html[data-theme="light"] .text-color-row--light {
   width: 100%;
   font-size: 0.86rem;
   color: var(--text-2);
+}
+
+.cleanup-age-select {
+  width: min(190px, 100%);
+}
+
+.cleanup-check input:disabled,
+.cleanup-field input:disabled,
+.cleanup-age-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cleanup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--s3);
+  width: 100%;
+}
+
+.cleanup-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--text-2);
+}
+
+.cleanup-check input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.cleanup-check strong {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cleanup-check small,
+.cleanup-field small {
+  display: block;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.cleanup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.86rem;
+  color: var(--text-2);
+}
+
+.cleanup-field .field {
+  width: 100%;
 }
 
 .font-select {

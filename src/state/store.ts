@@ -1,6 +1,8 @@
 import { proxy } from "valtio";
 import type {
   AccountMeta,
+  CleanupCursor,
+  CleanupPolicy,
   ComposeIntent,
   CredentialAccount,
   FloatRect,
@@ -33,6 +35,18 @@ export interface AccountPrefs {
   newsletterSourcesVersion?: number;
   /** End of the last Timeseries review (Unix ms). */
   timeseriesLastAt?: number;
+  /** Local automated post deletion policy. */
+  cleanup?: CleanupPolicy;
+  /** Last automated cleanup run (Unix ms). */
+  cleanupLastRun?: number;
+  /** Do not attempt deletions before this time (Unix ms). */
+  cleanupRateLimitedUntil?: number;
+  /** Resume point for an unfinished cleanup pass. */
+  cleanupCursor?: CleanupCursor;
+  /** A rate-limited or unfinished batch still needs another run. */
+  cleanupResumePending?: boolean;
+  /** Statuses older than this time were already inspected (Unix ms). */
+  cleanupInspectedThrough?: number;
 }
 
 export interface AppState {

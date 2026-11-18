@@ -2,7 +2,7 @@
 
 import type { LayoutMode, Shortcut } from "../api/types";
 
-export const COLUMN_MIN = 240;
+export const COLUMN_MIN = 300;
 export const COLUMN_MAX = 720;
 export function clampNumber(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));

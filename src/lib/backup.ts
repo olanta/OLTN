@@ -12,6 +12,7 @@ import type {
 import { PANEL_COLORS } from "./panel-colors";
 import { layoutFromSettings } from "./layout";
 import { DEFAULT_SETTINGS, type AccountPrefs } from "../state/store";
+import { normalizeCleanupPolicy } from "./cleanup";
 import { normalizeTextSize } from "./text-size";
 
 export const BACKUP_FORMAT = "oltn-backup";
@@ -271,6 +272,41 @@ export function sanitizePrefs(value: unknown): AccountPrefs {
   if (Object.keys(colors).length) prefs.colors = colors;
   const sources = newsletterSourcesOf(value.newsletterSources);
   if (sources) prefs.newsletterSources = sources;
+  if (value.cleanup !== undefined) prefs.cleanup = normalizeCleanupPolicy(value.cleanup);
+  if (typeof value.cleanupLastRun === "number" && Number.isFinite(value.cleanupLastRun)) {
+    prefs.cleanupLastRun = Math.max(0, Math.round(value.cleanupLastRun));
+  }
+  if (
+    typeof value.cleanupRateLimitedUntil === "number" &&
+    Number.isFinite(value.cleanupRateLimitedUntil)
+  ) {
+    prefs.cleanupRateLimitedUntil = Math.max(0, Math.round(value.cleanupRateLimitedUntil));
+  }
+  if (typeof value.cleanupResumePending === "boolean") {
+    prefs.cleanupResumePending = value.cleanupResumePending;
+  }
+  if (
+    typeof value.cleanupInspectedThrough === "number" &&
+    Number.isFinite(value.cleanupInspectedThrough)
+  ) {
+    prefs.cleanupInspectedThrough = Math.max(0, Math.round(value.cleanupInspectedThrough));
+  }
+  if (isRecord(value.cleanupCursor)) {
+    const { maxId, cutoff, floor } = value.cleanupCursor;
+    if (
+      typeof maxId === "string" &&
+      typeof cutoff === "number" &&
+      Number.isFinite(cutoff) &&
+      typeof floor === "number" &&
+      Number.isFinite(floor)
+    ) {
+      prefs.cleanupCursor = {
+        maxId,
+        cutoff: Math.max(0, Math.round(cutoff)),
+        floor: Math.max(0, Math.round(floor)),
+      };
+    }
+  }
   return prefs;
 }
 

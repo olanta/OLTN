@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useSnapshot } from "valtio";
 import type { ShortcutType } from "../api/types";
 import { ColumnRefreshButton } from "../components/feed/ColumnRefreshButton";
@@ -14,12 +14,7 @@ import { bringToFront, stackOrder } from "../lib/floats";
 import { useHotkeys } from "../lib/hotkeys";
 import { supportsCollections } from "../lib/instance-features";
 import { beginPointerDrag, dropTarget, type DropTarget } from "../lib/pointer-drag";
-import {
-  clampWidth,
-  moveInOrder,
-  orderColumns,
-  routeMode,
-} from "../lib/layout";
+import { clampWidth, moveInOrder, orderColumns, routeMode } from "../lib/layout";
 import { backOrHome, Link, matchRoutes, navigate, useRouter } from "../lib/router";
 import { shortcutLabel, shortcutRoute } from "./shortcuts";
 import { routes } from "./routes";
@@ -653,8 +648,37 @@ export function MultiColumns(): JSX.Element {
   const widths: Record<string, number> = layout?.columnWidths ?? {};
   const colors: Record<string, string> = layout?.colors ?? {};
   const list = orderColumns(shortcuts, layout?.columnOrder ?? []);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const [canScroll, setCanScroll] = useState({ left: false, right: false });
 
   useEffect(() => () => activeDndCleanup?.(), []);
+
+  useEffect(() => {
+    const el = columnsRef.current;
+    if (!el) return;
+    const update = (): void => {
+      const max = el.scrollWidth - el.clientWidth;
+      setCanScroll({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 });
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    for (const child of el.children) observer.observe(child);
+    return () => {
+      el.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [list.length]);
+
+  const scrollColumns = (direction: -1 | 1): void => {
+    const el = columnsRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: direction * Math.max(280, el.clientWidth * 0.8),
+      behavior: "smooth",
+    });
+  };
 
   const startReorder = (e: PointerEvent, id: string): void => {
     const grip = e.currentTarget as HTMLElement;
@@ -738,81 +762,105 @@ export function MultiColumns(): JSX.Element {
   };
 
   return (
-    <div class="columns" id="main" tabindex={-1}>
-      {list.map((shortcut) => {
-        const width = widths[shortcut.id];
-        return (
-          <section
-            class={`column ${width ? "with-width" : ""}`}
-            key={shortcut.id}
-            data-shortcut-id={shortcut.id}
-            data-panel-color={colors[shortcut.id]}
-            style={width ? `--col-w:${width}px` : undefined}
-          >
-            <header class="deck-header">
+    <div class="columns-shell">
+      <div class="columns" id="main" tabindex={-1} ref={columnsRef}>
+        {list.map((shortcut) => {
+          const width = widths[shortcut.id];
+          return (
+            <section
+              class={`column ${width ? "with-width" : ""}`}
+              key={shortcut.id}
+              data-shortcut-id={shortcut.id}
+              data-panel-color={colors[shortcut.id]}
+              style={width ? `--col-w:${width}px` : undefined}
+            >
+              <header class="deck-header">
+                <button
+                  type="button"
+                  class="col-grip"
+                  title={`${t.reorderColumn}: ${shortcut.label}`}
+                  aria-label={`${t.reorderColumn}: ${shortcut.label}`}
+                  onPointerDown={(e) => startReorder(e, shortcut.id)}
+                />
+                <Icon name={iconForShortcut(shortcut)} size={18} />
+                <h1>{shortcutLabel(shortcut)}</h1>
+                <div class="spacer" />
+                {shortcut.type === "home" && <HomeGalleryToggle />}
+                <ColumnRefreshButton label={shortcutLabel(shortcut)} />
+                <PanelColorButton
+                  id={shortcut.id}
+                  color={colors[shortcut.id]}
+                  label={shortcutLabel(shortcut)}
+                />
+                <button
+                  type="button"
+                  class="icon-btn col-close"
+                  title={t.closeColumn}
+                  aria-label={`${t.closeColumn}: ${shortcutLabel(shortcut)}`}
+                  onClick={() => saveShortcuts(store.shortcuts.filter((s) => s.id !== shortcut.id))}
+                >
+                  <Icon name="close-line" size={15} />
+                </button>
+              </header>
+              <div class="deck-body">
+                <ColumnContent shortcut={shortcut} instance={account?.instance} />
+              </div>
               <button
                 type="button"
-                class="col-grip"
-                title={`${t.reorderColumn}: ${shortcut.label}`}
-                aria-label={`${t.reorderColumn}: ${shortcut.label}`}
-                onPointerDown={(e) => startReorder(e, shortcut.id)}
+                class="col-resize"
+                title={`${t.resizeColumn}: ${shortcutLabel(shortcut)}`}
+                aria-label={`${t.resizeColumn}: ${shortcutLabel(shortcut)}${
+                  width ? ` (${Math.round(width)}px)` : ""
+                }`}
+                onPointerDown={(e) => startResize(e, shortcut.id)}
+                onKeyDown={(e) => {
+                  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                  e.preventDefault();
+                  const col = (e.currentTarget as HTMLElement).closest(
+                    ".column",
+                  ) as HTMLElement | null;
+                  if (!col) return;
+                  const current = col.getBoundingClientRect().width;
+                  const next = clampWidth(current + (e.key === "ArrowRight" ? 16 : -16));
+                  saveColumnLayout(
+                    list.map((s) => s.id),
+                    { ...widths, [shortcut.id]: next },
+                  );
+                }}
               />
-              <Icon name={iconForShortcut(shortcut)} size={18} />
-              <h1>{shortcutLabel(shortcut)}</h1>
-              <div class="spacer" />
-              {shortcut.type === "home" && <HomeGalleryToggle />}
-              <ColumnRefreshButton label={shortcutLabel(shortcut)} />
-              <PanelColorButton
-                id={shortcut.id}
-                color={colors[shortcut.id]}
-                label={shortcutLabel(shortcut)}
-              />
-              <button
-                type="button"
-                class="icon-btn col-close"
-                title={t.closeColumn}
-                aria-label={`${t.closeColumn}: ${shortcutLabel(shortcut)}`}
-                onClick={() => saveShortcuts(store.shortcuts.filter((s) => s.id !== shortcut.id))}
-              >
-                <Icon name="close-line" size={15} />
-              </button>
-            </header>
-            <div class="deck-body">
-              <ColumnContent shortcut={shortcut} instance={account?.instance} />
+            </section>
+          );
+        })}
+        {!list.length && (
+          <section class="column">
+            <div class="center-state">
+              <Icon name="list-check-line" size={28} />
+              <p>{t.pinHint}</p>
             </div>
-            <button
-              type="button"
-              class="col-resize"
-              title={`${t.resizeColumn}: ${shortcutLabel(shortcut)}`}
-              aria-label={`${t.resizeColumn}: ${shortcutLabel(shortcut)}${
-                width ? ` (${Math.round(width)}px)` : ""
-              }`}
-              onPointerDown={(e) => startResize(e, shortcut.id)}
-              onKeyDown={(e) => {
-                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-                e.preventDefault();
-                const col = (e.currentTarget as HTMLElement).closest(
-                  ".column",
-                ) as HTMLElement | null;
-                if (!col) return;
-                const current = col.getBoundingClientRect().width;
-                const next = clampWidth(current + (e.key === "ArrowRight" ? 16 : -16));
-                saveColumnLayout(
-                  list.map((s) => s.id),
-                  { ...widths, [shortcut.id]: next },
-                );
-              }}
-            />
           </section>
-        );
-      })}
-      {!list.length && (
-        <section class="column">
-          <div class="center-state">
-            <Icon name="list-check-line" size={28} />
-            <p>{t.pinHint}</p>
-          </div>
-        </section>
+        )}
+      </div>
+      {canScroll.left && (
+        <button
+          type="button"
+          class="columns-nav columns-nav--prev"
+          aria-label={t.prev}
+          title={t.prev}
+          onClick={() => scrollColumns(-1)}
+        >
+          <Icon name="arrow-left-line" size={18} />
+        </button>
+      )}
+      {canScroll.right && (
+        <button
+          type="button"
+          class="columns-nav columns-nav--next"
+          aria-label={t.next}
+          title={t.next}
+          onClick={() => scrollColumns(1)}
+        >
+          <Icon name="arrow-right-line" size={18} />
+        </button>
       )}
     </div>
   );

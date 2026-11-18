@@ -84,6 +84,30 @@ export type ThemeSetting = "dark" | "light" | "auto";
 export type AccentSetting = "green" | "orange" | "purple" | "blue" | "pink";
 export type FontSetting = "space" | "atkinson" | "system" | "serif" | "mono";
 export type DarkTextColor = "soft" | "white" | "warm" | "cool";
+export interface CleanupPolicy {
+  enabled: boolean;
+  /** Minimum age in seconds. Mirrors Mastodon's allowed thresholds. */
+  minStatusAge: number;
+  keepPinned: boolean;
+  keepDirect: boolean;
+  keepFavourited: boolean;
+  keepBookmarked: boolean;
+  keepPolls: boolean;
+  keepMedia: boolean;
+  /** 0 means "ignore"; any other value is the minimum count to keep. */
+  minFavourites: number;
+  minBoosts: number;
+}
+
+/** Resume point for a cleanup pass using the account statuses API. */
+export interface CleanupCursor {
+  /** Resume with statuses older than this id. */
+  maxId: string;
+  /** Eligibility cutoff fixed for this pass (Unix ms). */
+  cutoff: number;
+  /** Statuses at or below this time were already inspected (Unix ms). */
+  floor: number;
+}
 export type LightTextColor = "charcoal" | "black" | "warm" | "cool" | "gray";
 export type LanguageSetting = "pt-BR" | "en";
 
