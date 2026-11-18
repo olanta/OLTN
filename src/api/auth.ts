@@ -58,7 +58,9 @@ export async function fetchInstance(instance: string): Promise<InstanceSummary> 
     thumbnail?: string | null;
   };
   return {
-    uri: json.uri || instance,
+    // The API's canonical `uri` can differ from the host that serves the API
+    // (e.g. social.vivaldi.net reports vivaldi.net), so keep the input host.
+    uri: instance,
     title: json.title || instance,
     thumbnail: json.thumbnail ?? null,
   };

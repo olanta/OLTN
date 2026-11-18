@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { normalizeInstanceInput, oauthCallbackUrl } from "../../api/auth";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fetchInstance, normalizeInstanceInput, oauthCallbackUrl } from "../../api/auth";
 
 describe("normalizeInstanceInput", () => {
   it("accepts plain hosts", () => {
@@ -32,6 +32,24 @@ describe("normalizeInstanceInput", () => {
     expect(normalizeInstanceInput("")).toBeNull();
     expect(normalizeInstanceInput("@@invalido")).toBeNull();
     expect(normalizeInstanceInput("sem-espaco")).toBeNull();
+  });
+});
+
+describe("fetchInstance", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps the input host when the instance reports a different canonical uri", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ uri: "vivaldi.net", title: "Vivaldi Social" }),
+      })),
+    );
+
+    const info = await fetchInstance("social.vivaldi.net");
+    expect(info.uri).toBe("social.vivaldi.net");
+    expect(info.title).toBe("Vivaldi Social");
   });
 });
 
