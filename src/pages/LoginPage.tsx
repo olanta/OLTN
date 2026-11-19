@@ -151,6 +151,11 @@ export function LoginPage(): JSX.Element {
             </svg>
             <h1 class="login-wordmark">OLTN</h1>
             <p class="login-tagline">{t.tagline}</p>
+            <p class="login-protocols" aria-label="Mastodon, Friendica, snac">
+              <span>Mastodon</span>
+              <span>Friendica</span>
+              <span>snac</span>
+            </p>
           </div>
 
           <div class="login-card glass">
@@ -171,6 +176,7 @@ export function LoginPage(): JSX.Element {
                   onInput={(e) => setInput((e.target as HTMLInputElement).value)}
                   autoFocus
                 />
+                <p class="login-hint">{t.instanceHint}</p>
                 {error && <p class="login-error">{error}</p>}
                 <button type="submit" class="btn primary block" disabled={busy || !input.trim()}>
                   {busy ? <span class="spinner" /> : <Icon name="arrow-right-line" size={16} />}

@@ -35,6 +35,8 @@ export interface AccountPrefs {
   newsletterSourcesVersion?: number;
   /** End of the last Timeseries review (Unix ms). */
   timeseriesLastAt?: number;
+  /** Desktop width of the Account area. */
+  accountWidth?: number;
   /** Local automated post deletion policy. */
   cleanup?: CleanupPolicy;
   /** Last automated cleanup run (Unix ms). */

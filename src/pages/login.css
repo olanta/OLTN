@@ -258,3 +258,53 @@
 .login-support-pop a:hover {
   text-decoration: underline;
 }
+
+.login-protocols {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.login-protocols span {
+  padding: 3px 10px;
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.login-hint {
+  margin: -4px 0 0;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (max-width: 30em) {
+  .login-page {
+    padding: var(--s4) var(--s3) var(--s3);
+  }
+
+  .login-stack {
+    gap: var(--s4);
+  }
+
+  .login-card {
+    padding: var(--s4);
+    border-radius: var(--r-lg);
+  }
+
+  .login-mark {
+    width: 84px;
+    height: 84px;
+  }
+
+  .login-tagline {
+    max-width: 32ch;
+  }
+}

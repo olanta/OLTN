@@ -3,6 +3,7 @@ import type { Poll, RestClient, Status } from "../../api/types";
 import {
   blockStatusAuthor,
   deleteStatus,
+  muteStatusAuthor,
   reportStatus,
   toggleStatusAction,
   toggleStatusPin,
@@ -305,6 +306,25 @@ describe("blockStatusAuthor", () => {
     const ok = await blockStatusAuthor(ctx(client), key);
     expect(ok).toBe(false);
     expect(store.blockedAccounts).toHaveLength(0);
+    expect(lastToast()?.kind).toBe("error");
+  });
+});
+
+describe("muteStatusAuthor", () => {
+  it("mutes the resolved account", async () => {
+    const { client, calls } = fakeClient();
+    const key = putStatus(makeStatus("1"), "mock.instance");
+    const ok = await muteStatusAuthor(ctx(client), key);
+    expect(ok).toBe(true);
+    expect(calls).toEqual(["mute:a2"]);
+    expect(lastToast()?.kind).toBe("ok");
+  });
+
+  it("fails gracefully", async () => {
+    const { client } = fakeClient({ failOn: "mute:" });
+    const key = putStatus(makeStatus("1"), "mock.instance");
+    const ok = await muteStatusAuthor(ctx(client), key);
+    expect(ok).toBe(false);
     expect(lastToast()?.kind).toBe("error");
   });
 });

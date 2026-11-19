@@ -6,6 +6,7 @@ import { ColumnRefreshButton } from "../components/feed/ColumnRefreshButton";
 import { HomeGalleryToggle } from "../components/feed/HomeGalleryToggle";
 import { Icon } from "../components/ui/Icon";
 import { Avatar } from "../components/ui/Avatar";
+import { AccountMenu } from "../components/account/AccountMenu";
 import { Sheet } from "../components/ui/Sheet";
 import { t, type TKey } from "../i18n/pt-BR";
 import { focusableCards, nextFocusIndex } from "../lib/deck-focus";
@@ -286,6 +287,7 @@ function Rail(): JSX.Element | null {
   const desktop = useIsDesktop();
   const me = state.me;
   const account = currentAccount();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const shortcuts = useSnapshot(store).shortcuts;
   const railShortcuts = shortcuts.filter((s) => !NAV_COLUMN_TYPES.has(s.type));
   const mode = routeMode(
@@ -359,7 +361,8 @@ function Rail(): JSX.Element | null {
   };
 
   return (
-    <nav class="rail collapsed" aria-label={t.navHelp}>
+    <>
+      <nav class="rail collapsed" aria-label={t.navHelp}>
       <Link href="/" class="rail-logo" title="OLTN">
         <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden>
           <circle cx="32" cy="34" r="17" fill="none" stroke="currentColor" strokeWidth="7" />
@@ -468,20 +471,24 @@ function Rail(): JSX.Element | null {
       </button>
       {me && account && (
         <div class="rail-account">
-          <Link
-            href={`/${encodeURIComponent(account.instance)}/a/${me.id}`}
-            title={account.handle}
-            ariaLabel={account.handle}
+          <button
+            type="button"
+            class="rail-account-btn"
+            title={t.account}
+            aria-label={t.account}
+            onClick={() => setAccountMenuOpen(true)}
           >
             <Avatar
               src={me.avatarStatic || me.avatar}
               name={me.displayName || me.username}
               size={38}
             />
-          </Link>
+          </button>
         </div>
       )}
-    </nav>
+      </nav>
+      {accountMenuOpen && <AccountMenu onClose={() => setAccountMenuOpen(false)} />}
+    </>
   );
 }
 
@@ -593,6 +600,10 @@ function MoreMenu({ onClose }: { onClose: () => void }): JSX.Element {
       )}
       <section class="menu-section">
         <h3 class="menu-title">{t.navigation}</h3>
+        <Link href="/account" class="menu-row" onClick={onClose}>
+          <Icon name="user-3-line" size={18} />
+          <span>{t.account}</span>
+        </Link>
         {navItems.map((item) =>
           item.action ? (
             <button

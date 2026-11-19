@@ -21,6 +21,7 @@ import {
 import {
   blockStatusAuthor,
   deleteStatus,
+  muteStatusAuthor,
   toggleStatusAction,
   toggleStatusPin,
 } from "../../state/status-actions";
@@ -392,11 +393,13 @@ function StatusActionMenu({
   menuRef,
   onReport,
   onBlock,
+  onMute,
 }: {
   pos: ActionMenuPos;
   menuRef: RefObject<HTMLDivElement | null>;
   onReport: (e: MouseEvent) => void;
   onBlock: (e: MouseEvent) => void;
+  onMute: (e: MouseEvent) => void;
 }): JSX.Element {
   return (
     <div
@@ -408,6 +411,10 @@ function StatusActionMenu({
       <button type="button" role="menuitem" class="action-menu-item" onClick={onReport}>
         <Icon name="report-line" size={15} />
         {t.reportPost}
+      </button>
+      <button type="button" role="menuitem" class="action-menu-item" onClick={onMute}>
+        <Icon name="volume-line" size={15} />
+        {t.muteUser}
       </button>
       <button type="button" role="menuitem" class="action-menu-item danger" onClick={onBlock}>
         <Icon name="user-forbid-line" size={15} />
@@ -499,6 +506,12 @@ function StatusCardView({
     menu.close();
     if (!window.confirm(`${t.blockConfirm} @${target.account.acct}`)) return;
     await blockStatusAuthor(clientFor(account.instance), targetKey);
+  };
+
+  const muteUser = async (): Promise<void> => {
+    if (!account) return;
+    menu.close();
+    await muteStatusAuthor(clientFor(account.instance), targetKey);
   };
 
   const removeStatus = async (e: MouseEvent): Promise<void> => {
@@ -709,6 +722,10 @@ function StatusCardView({
             onBlock={(e) => {
               e.stopPropagation();
               void blockUser();
+            }}
+            onMute={(e) => {
+              e.stopPropagation();
+              void muteUser();
             }}
           />
         )}

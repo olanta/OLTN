@@ -6,6 +6,7 @@ import { NotificationsPage } from "../pages/NotificationsPage";
 import { StatusPage } from "../pages/StatusPage";
 import { AccountPage } from "../pages/AccountPage";
 import { SearchPage } from "../pages/SearchPage";
+import { AccountAreaPage } from "../pages/AccountAreaPage";
 import { HashtagPage, PublicPage } from "../pages/DiscoverPages";
 import { BookmarksPage, BoostsPage, FavouritesPage } from "../pages/LibraryPages";
 import { ListsPage, ListPage } from "../pages/ListsPage";
@@ -51,6 +52,7 @@ export const routes: AppRoute[] = [
   { pattern: "/trending", page: TrendingPage },
   { pattern: "/newsletter", page: NewsletterPage, wide: true },
   { pattern: "/settings", page: SettingsPage, auth: true },
+  { pattern: "/account/:section?", page: AccountAreaPage, auth: true },
   { pattern: "/accounts", page: AccountsPage },
   { pattern: "/search", page: SearchPage },
   { pattern: "/:instance?/s/:id", page: StatusPage, centered: true },

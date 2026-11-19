@@ -288,6 +288,39 @@ describe("runCleanup", () => {
     expect(secondRun.inspectedThrough).toBe(CUTOFF);
   });
 
+  it("treats an already deleted post as handled", async () => {
+    const old = status(20);
+    const deleted: Status[] = [];
+    const client = {
+      v1: {
+        accounts: {
+          $select: () => ({ statuses: { list: async () => [old] } }),
+        },
+        statuses: {
+          $select: () => ({
+            remove: async () => {
+              throw { statusCode: 404 };
+            },
+          }),
+        },
+      },
+    } as unknown as RestClient;
+
+    const result = await runCleanup({
+      client,
+      accountId: "me",
+      policy: POLICY,
+      now: NOW,
+      sleep: async () => {},
+      onDeleted: (item) => deleted.push(item),
+    });
+
+    expect(result.deleted).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(result.rateLimited).toBe(false);
+    expect(deleted).toEqual([old]);
+  });
+
   it("stops when the API rate limits without skipping the failed post", async () => {
     const first = status(20);
     const failed = status(30);

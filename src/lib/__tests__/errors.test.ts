@@ -22,6 +22,8 @@ describe("httpStatusOf", () => {
 
   it("reads statusCode from masto-style errors", () => {
     expect(httpStatusOf({ statusCode: 429 })).toBe(429);
+    expect(httpStatusOf({ cause: { statusCode: 503 } })).toBe(503);
+    expect(httpStatusOf({ response: { status: 404 } })).toBe(404);
   });
 
   it("returns null for ordinary errors", () => {

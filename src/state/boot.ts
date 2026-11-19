@@ -192,8 +192,18 @@ export function saveCleanupRunFor(
 
 /** Keep read-only continuation well below the API's general rate limit. */
 const CLEANUP_SCAN_RETRY_MS = 2 * 60 * 1000;
+/** Avoid two OLTN tabs running the same account cleanup at once. */
+const CLEANUP_LOCK_MS = 2 * 60 * 1000;
 let cleanupTimer: number | null = null;
 const cleanupInFlight = new Set<string>();
+
+function cleanupLockKey(accountId: string): string {
+  return `cleanup-lock:${accountId}`;
+}
+
+function storedCleanupPrefs(account: AccountMeta): AccountPrefs | undefined {
+  return readJSON<Record<string, AccountPrefs>>("prefs", {})[accountNS(account)];
+}
 
 function clearCleanupTimer(): void {
   if (cleanupTimer !== null) {
@@ -220,23 +230,42 @@ async function runCleanupBatch(account: AccountMeta, dueOnly: boolean): Promise<
   if (cleanupInFlight.has(account.id)) return;
   clearCleanupTimer();
   const prefs = store.prefs[accountNS(account)];
-  const policy = normalizeCleanupPolicy(prefs?.cleanup);
+  const persisted = storedCleanupPrefs(account);
+  const policy = normalizeCleanupPolicy(prefs?.cleanup ?? persisted?.cleanup);
   if (!policy.enabled) return;
 
-  const hasPending = !!prefs?.cleanupCursor || !!prefs?.cleanupResumePending;
-  const cooldown = prefs?.cleanupRateLimitedUntil;
+  const hasPending =
+    !!prefs?.cleanupCursor ||
+    !!prefs?.cleanupResumePending ||
+    !!persisted?.cleanupCursor ||
+    !!persisted?.cleanupResumePending;
+  const cooldown = Math.max(
+    prefs?.cleanupRateLimitedUntil ?? 0,
+    persisted?.cleanupRateLimitedUntil ?? 0,
+  );
   if (dueOnly && !hasPending && !cleanupCooldownActive(cooldown)) {
-    if (!cleanupDue(policy, prefs?.cleanupLastRun)) {
-      scheduleCleanup(account, (prefs?.cleanupLastRun ?? 0) + CLEANUP_INTERVAL_MS - Date.now());
+    if (!cleanupDue(policy, prefs?.cleanupLastRun ?? persisted?.cleanupLastRun)) {
+      scheduleCleanup(
+        account,
+        (prefs?.cleanupLastRun ?? persisted?.cleanupLastRun ?? 0) +
+          CLEANUP_INTERVAL_MS -
+          Date.now(),
+      );
       return;
     }
   }
   if (cleanupCooldownActive(cooldown)) {
-    scheduleCleanup(account, (cooldown ?? 0) - Date.now() + 1000);
+    scheduleCleanup(account, cooldown - Date.now() + 1000);
+    return;
+  }
+  const lock = readJSON<number>(cleanupLockKey(account.id), 0);
+  if (lock && Date.now() - lock < CLEANUP_LOCK_MS) {
+    scheduleCleanup(account, CLEANUP_LOCK_MS - (Date.now() - lock) + 1000);
     return;
   }
 
   cleanupInFlight.add(account.id);
+  writeJSON(cleanupLockKey(account.id), Date.now());
   try {
     const result = await runCleanup({
       client: getRest(account.instance, account.accessToken),
@@ -275,7 +304,12 @@ async function runCleanupBatch(account: AccountMeta, dueOnly: boolean): Promise<
     scheduleCleanup(account, CLEANUP_INTERVAL_MS);
   } finally {
     cleanupInFlight.delete(account.id);
+    writeJSON(cleanupLockKey(account.id), 0);
   }
+}
+
+export function saveAccountWidth(width: number): void {
+  updatePrefs({ accountWidth: Math.round(width) });
 }
 
 export function saveShortcuts(shortcuts: Shortcut[]): void {

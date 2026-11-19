@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Account, RestClient, Status } from "../../api/types";
+import { DISCOVERY_SEEDS } from "../discover-seeds";
 import {
   clearDiscoverCache,
   DISCOVER_CATEGORIES,
+  DISCOVER_LANGUAGES,
   discoverAccounts,
   rankDiscoverCandidates,
   scoreDiscoverCandidate,
@@ -76,6 +78,38 @@ describe("DISCOVER_CATEGORIES", () => {
       expect(category.keywords.length).toBeGreaterThan(0);
       expect(category.query.trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("DISCOVER_LANGUAGES", () => {
+  it("has unique ids and complete search seeds", () => {
+    const ids = DISCOVER_LANGUAGES.map((language) => language.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const language of DISCOVER_LANGUAGES) {
+      expect(language.label.length).toBeGreaterThan(0);
+      expect(language.english.length).toBeGreaterThan(0);
+      expect(language.tags.length).toBeGreaterThan(0);
+      expect(language.keywords.length).toBeGreaterThan(0);
+      expect(language.query.trim().length).toBeGreaterThan(0);
+    }
+    expect(ids).toEqual(expect.arrayContaining(["pt", "es", "ja"]));
+  });
+});
+
+describe("DISCOVERY_SEEDS", () => {
+  const portuguese = DISCOVERY_SEEDS.pt ?? [];
+
+  it("contains the curated Portuguese handles without duplicates", () => {
+    expect(portuguese.length).toBeGreaterThan(1000);
+    expect(new Set(portuguese).size).toBe(portuguese.length);
+    expect(portuguese).toEqual(
+      expect.arrayContaining([
+        "autobrain@arram.senta-la.cloud",
+        "cochise@comuna.social.br",
+        "sr_renato@organica.social",
+        "vitu@bolha.us",
+      ]),
+    );
   });
 });
 

@@ -196,6 +196,27 @@ async function applyBlock(
   toast(t.blocked, "ok");
 }
 
+/** Mutes the status author on the instance. */
+export async function muteStatusAuthor(ctx: StatusActionsContext, key: string): Promise<boolean> {
+  const status = store.statuses[key];
+  if (!status) return false;
+  if (!begin(key, "mute")) return false;
+  try {
+    const source = sourceInstanceFor(key, status);
+    const accountId = await localAccountId(ctx.client, ctx.instance, status.account, source);
+    if (!accountId) throw new Error("mute_resolve_failed");
+    await ctx.client.v1.accounts.$select(accountId).mute();
+    toast(t.muted, "ok");
+    return true;
+  } catch (err) {
+    console.warn("[oltn] mute failed", err);
+    toast(userMessageForError(err, t.errorGeneric), "error");
+    return false;
+  } finally {
+    end(key, "mute");
+  }
+}
+
 /** Blocks the status author and records the hiding invariant. */
 export async function blockStatusAuthor(ctx: StatusActionsContext, key: string): Promise<boolean> {
   const status = store.statuses[key];

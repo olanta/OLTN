@@ -155,8 +155,10 @@ function ComposeInner({ intent }: { intent: ComposeIntent }): JSX.Element {
   const [text, setText] = useState(prefill);
   const [spoiler, setSpoiler] = useState("");
   const [showCw, setShowCw] = useState(false);
-  const [visibility, setVisibility] = useState<ComposeVisibility>("public");
-  const [sensitive, setSensitive] = useState(false);
+  const [visibility, setVisibility] = useState<ComposeVisibility>(() =>
+    defaultComposeVisibility(store.me?.source?.privacy),
+  );
+  const [sensitive, setSensitive] = useState(() => !!store.me?.source?.sensitive);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const [poll, setPoll] = useState<PublishPoll | null>(null);
   const [describingId, setDescribingId] = useState<string | null>(null);

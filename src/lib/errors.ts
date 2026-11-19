@@ -15,10 +15,25 @@ export class HttpError extends Error {
 
 /** Extracts the HTTP status from an error (our HttpError or MastoHttpError). */
 export function httpStatusOf(error: unknown): number | null {
-  if (error instanceof HttpError) return error.status;
-  if (error && typeof error === "object" && "statusCode" in error) {
-    const status = (error as { statusCode?: unknown }).statusCode;
-    if (typeof status === "number") return status;
+  return statusFrom(error, 0);
+}
+
+function statusFrom(value: unknown, depth: number): number | null {
+  if (depth > 3) return null;
+  if (value instanceof HttpError) return value.status;
+  if (!value || typeof value !== "object") return null;
+  const record = value as {
+    status?: unknown;
+    statusCode?: unknown;
+    response?: unknown;
+    cause?: unknown;
+    error?: unknown;
+  };
+  if (typeof record.status === "number") return record.status;
+  if (typeof record.statusCode === "number") return record.statusCode;
+  for (const nested of [record.response, record.cause, record.error]) {
+    const status = statusFrom(nested, depth + 1);
+    if (status != null) return status;
   }
   return null;
 }

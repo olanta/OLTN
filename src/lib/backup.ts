@@ -254,6 +254,9 @@ export function sanitizePrefs(value: unknown): AccountPrefs {
       .filter((shortcut): shortcut is Shortcut => shortcut !== null)
       .slice(0, 200);
   }
+  if (typeof value.accountWidth === "number" && Number.isFinite(value.accountWidth)) {
+    prefs.accountWidth = Math.max(0, Math.round(value.accountWidth));
+  }
   if (Array.isArray(value.columnOrder)) {
     prefs.columnOrder = value.columnOrder
       .filter((entry): entry is string => typeof entry === "string")

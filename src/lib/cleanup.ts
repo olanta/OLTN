@@ -249,6 +249,15 @@ export async function runCleanup({
       } catch (err) {
         const httpStatus = httpStatusOf(err);
         if (httpStatus === 401 || httpStatus === 403) throw err;
+        if (httpStatus === 404 || httpStatus === 410) {
+          // Another client, the server cleanup or an earlier interrupted run
+          // already removed it. Treat it as handled and keep going.
+          result.deleted += 1;
+          lastInspectedId = status.id;
+          onDeleted?.(status);
+          onProgress?.(result);
+          continue;
+        }
         if (httpStatus === 429) {
           result.stopped = true;
           result.rateLimited = true;
@@ -256,8 +265,12 @@ export async function runCleanup({
           onProgress?.(result);
           return finish(result, completedThrough, floor, passCutoff, lastInspectedId, maxId);
         }
+        // Transient failures should retry the same post later instead of
+        // advancing the cursor past it.
+        result.stopped = true;
         result.failed += 1;
-        lastInspectedId = status.id;
+        onProgress?.(result);
+        return finish(result, completedThrough, floor, passCutoff, lastInspectedId, maxId);
       }
       onProgress?.(result);
     }

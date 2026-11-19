@@ -3,21 +3,36 @@ import { useEffect, useState } from "preact/hooks";
 import { getRest } from "../../api/client";
 import type { Account } from "../../api/types";
 import { t } from "../../i18n/pt-BR";
-import { DISCOVER_CATEGORIES, discoverAccounts, type DiscoverCategoryId } from "../../lib/discover";
+import { DISCOVERY_SEEDS } from "../../lib/discover-seeds";
+import {
+  DISCOVER_CATEGORIES,
+  DISCOVER_LANGUAGES,
+  discoverAccounts,
+  type DiscoverCategory,
+  type DiscoverCategoryId,
+} from "../../lib/discover";
 import { htmlToPlainText, shortNumber } from "../../lib/format";
-import { currentAccount } from "../../state/store";
+import { currentAccount, store } from "../../state/store";
 import { useCollectionRelationships } from "../collections/useCollectionRelationships";
+import { DiscoverSeedRow } from "./DiscoverSeeds";
 import { EmojiText } from "../status/EmojiText";
 import { Avatar } from "../ui/Avatar";
 import { Icon } from "../ui/Icon";
 
+type DiscoverMode = "topics" | "languages";
+
 export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.Element | null {
   const viewer = currentAccount();
+  const [mode, setMode] = useState<DiscoverMode>("topics");
   const [activeId, setActiveId] = useState<DiscoverCategoryId>(DISCOVER_CATEGORIES[0].id);
+  const [activeLanguage, setActiveLanguage] = useState<string>(() =>
+    store.settings.language.startsWith("pt") ? "pt" : "en",
+  );
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [tick, setTick] = useState(0);
+  const [seedLimit, setSeedLimit] = useState(80);
   const labels: Record<DiscoverCategoryId, string> = {
     art: t.discoverArt,
     books: t.discoverBooks,
@@ -33,8 +48,15 @@ export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.E
     travel: t.discoverTravel,
     communities: t.discoverCommunities,
   };
-  const category = DISCOVER_CATEGORIES.find((entry) => entry.id === activeId)!;
+  const category: DiscoverCategory =
+    mode === "topics"
+      ? DISCOVER_CATEGORIES.find((entry) => entry.id === activeId)!
+      : DISCOVER_LANGUAGES.find((entry) => entry.id === activeLanguage)!;
   const { states, toggle } = useCollectionRelationships(accounts, viewer?.instance ?? "");
+
+  useEffect(() => {
+    setSeedLimit(80);
+  }, [category.id]);
 
   useEffect(() => {
     const account = currentAccount();
@@ -63,6 +85,16 @@ export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.E
   }, [category, tick, viewer?.id, viewer?.instance]);
 
   if (!viewer) return null;
+  const allSeeds = DISCOVERY_SEEDS[category.id] ?? [];
+  const knownHandles = new Set(
+    accounts.flatMap((account) => {
+      const acct = account.acct.toLowerCase();
+      return acct.includes("@") ? [acct] : [acct, `${acct}@${viewer.instance.toLowerCase()}`];
+    }),
+  );
+  const seedHandles = allSeeds.filter((handle) => !knownHandles.has(handle.toLowerCase()));
+  const visibleSeeds = seedHandles.slice(0, seedLimit);
+  const hasRows = accounts.length > 0 || seedHandles.length > 0;
 
   return (
     <div class="discover-panel">
@@ -70,20 +102,55 @@ export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.E
         <h2>{t.discoverTopics}</h2>
         <p class="muted">{t.discoverHint}</p>
       </div>
-      <div class="discover-categories">
-        {DISCOVER_CATEGORIES.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            class={`discover-category ${entry.id === activeId ? "active" : ""}`}
-            aria-pressed={entry.id === activeId}
-            onClick={() => setActiveId(entry.id)}
-          >
-            <Icon name={entry.icon} size={16} />
-            {labels[entry.id]}
-          </button>
-        ))}
+      <div class="segmented discover-mode">
+        <button
+          type="button"
+          class={mode === "topics" ? "active" : ""}
+          onClick={() => setMode("topics")}
+        >
+          {t.discoverTopics}
+        </button>
+        <button
+          type="button"
+          class={mode === "languages" ? "active" : ""}
+          onClick={() => setMode("languages")}
+        >
+          {t.discoverLanguages}
+        </button>
       </div>
+
+      {mode === "topics" ? (
+        <div class="discover-categories">
+          {DISCOVER_CATEGORIES.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              class={`discover-category ${entry.id === activeId ? "active" : ""}`}
+              aria-pressed={entry.id === activeId}
+              onClick={() => setActiveId(entry.id)}
+            >
+              <Icon name={entry.icon} size={16} />
+              {labels[entry.id]}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div class="discover-language">
+          <label for="discover-language">{t.language}</label>
+          <select
+            id="discover-language"
+            class="field"
+            value={activeLanguage}
+            onChange={(e) => setActiveLanguage((e.target as HTMLSelectElement).value)}
+          >
+            {DISCOVER_LANGUAGES.map((language) => (
+              <option value={language.id}>
+                {language.label} — {language.english}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div class="discover-results">
         <h3 class="sub-section-title">{t.discoverProfiles}</h3>
@@ -91,7 +158,7 @@ export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.E
           <div class="center-state">
             <span class="spinner" />
           </div>
-        ) : failed ? (
+        ) : failed && !seedHandles.length ? (
           <div class="center-state">
             <Icon name="wifi-off-line" size={26} />
             <h3>{t.errorLoad}</h3>
@@ -100,7 +167,7 @@ export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.E
               {t.retry}
             </button>
           </div>
-        ) : !accounts.length ? (
+        ) : !hasRows ? (
           <div class="center-state">
             <Icon name="user-3-line" size={26} />
             <h3>{t.discoverEmpty}</h3>
@@ -163,6 +230,23 @@ export function DiscoverPanel({ onGo }: { onGo: (href: string) => void }): JSX.E
                 </div>
               );
             })}
+            {visibleSeeds.map((handle) => (
+              <DiscoverSeedRow
+                key={handle}
+                handle={handle}
+                instance={viewer.instance}
+                onGo={onGo}
+              />
+            ))}
+            {seedHandles.length > seedLimit && (
+              <button
+                type="button"
+                class="btn ghost discover-seed-more"
+                onClick={() => setSeedLimit((value) => value + 80)}
+              >
+                {t.showMore} ({seedHandles.length - seedLimit})
+              </button>
+            )}
           </div>
         )}
       </div>

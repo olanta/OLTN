@@ -25,7 +25,7 @@ function contextLabel(context: string): string {
   }
 }
 
-export function FiltersPage(): JSX.Element {
+export function FiltersPanel(): JSX.Element {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [loading, setLoading] = useState(true);
   const [phrase, setPhrase] = useState("");
@@ -131,7 +131,7 @@ export function FiltersPage(): JSX.Element {
   }
 
   return (
-    <PageShell title={t.filters} showBack>
+    <>
       <form class="filter-create" onSubmit={(e) => void create(e)}>
         <input
           class="field"
@@ -163,6 +163,14 @@ export function FiltersPage(): JSX.Element {
         </button>
       </form>
       {body}
+    </>
+  );
+}
+
+export function FiltersPage(): JSX.Element {
+  return (
+    <PageShell title={t.filters} showBack>
+      <FiltersPanel />
     </PageShell>
   );
 }
