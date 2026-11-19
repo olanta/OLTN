@@ -3,7 +3,14 @@
   display: flex;
   flex-direction: column;
   padding: var(--s5) var(--s5) var(--s4);
-  background: var(--bg-arena);
+  background:
+    radial-gradient(
+      ellipse 60% 45% at 50% 16%,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent 72%
+    ),
+    var(--bg-arena);
+  overflow-x: hidden;
 }
 
 .login-main {
@@ -13,10 +20,14 @@
 }
 
 .login-stack {
-  width: min(420px, 100%);
+  width: min(400px, 100%);
   display: flex;
   flex-direction: column;
-  gap: var(--s5);
+  gap: var(--s6);
+}
+
+.login-stage {
+  position: relative;
 }
 
 /* ---------- brand + wordmark ---------- */
@@ -91,21 +102,39 @@
 }
 
 .login-card {
-  padding: var(--s6);
+  position: relative;
+  z-index: 1;
+  padding: 30px 24px 26px;
   display: flex;
   flex-direction: column;
   gap: var(--s5);
-  border-radius: var(--r-xl);
-  box-shadow: var(--shadow-2);
+  border: var(--hairline) solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-1) 94%, transparent);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
   animation: rise-in 0.45s var(--ease) 0.1s both;
 }
 
+.login-cat {
+  position: absolute;
+  z-index: 0;
+  right: -165px;
+  bottom: 0;
+  width: 235px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  animation: rise-in 0.55s var(--ease) 0.18s both;
+}
+
 .login-lead {
-  margin: 0 0 var(--s3);
+  margin: 0 0 var(--s2);
   color: var(--text-2);
   font-size: 0.92rem;
   line-height: 1.45;
-  text-align: center;
+  text-align: left;
 }
 
 .login-label {
@@ -120,7 +149,16 @@
 .login-card form {
   display: flex;
   flex-direction: column;
-  gap: var(--s3);
+  gap: 10px;
+}
+
+.login-card .field {
+  min-height: 44px;
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
+}
+
+.login-card .btn.primary.block {
+  min-height: 42px;
 }
 
 .login-error {
@@ -283,6 +321,12 @@
   color: var(--text-3);
   font-size: 0.78rem;
   text-align: center;
+}
+
+@media (max-width: 719px) {
+  .login-cat {
+    display: none;
+  }
 }
 
 @media (max-width: 30em) {

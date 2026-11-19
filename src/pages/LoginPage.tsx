@@ -14,6 +14,7 @@ import {
   type InstanceSummary,
   type PendingAuth,
 } from "../api/auth";
+import loginCat from "../assets/login-cat.png";
 import supportQr from "../assets/support-qr.png";
 import { t } from "../i18n/pt-BR";
 import { sessionRead, sessionWrite } from "../lib/storage";
@@ -158,91 +159,94 @@ export function LoginPage(): JSX.Element {
             </p>
           </div>
 
-          <div class="login-card glass">
-            {!instance ? (
-              <form onSubmit={(e) => void discover(e)}>
-                <p class="login-lead">{t.loginSubtitle}</p>
-                <label class="login-label" htmlFor="instance">
-                  {t.instanceLabel}
-                </label>
-                <input
-                  id="instance"
-                  class="field"
-                  placeholder={t.instancePlaceholder}
-                  value={input}
-                  autocomplete="url"
-                  autocapitalize="off"
-                  spellcheck={false}
-                  onInput={(e) => setInput((e.target as HTMLInputElement).value)}
-                  autoFocus
-                />
-                <p class="login-hint">{t.instanceHint}</p>
-                {error && <p class="login-error">{error}</p>}
-                <button type="submit" class="btn primary block" disabled={busy || !input.trim()}>
-                  {busy ? <span class="spinner" /> : <Icon name="arrow-right-line" size={16} />}
-                  {busy ? t.loginLooking : t.loginButton}
-                </button>
-                <p class="login-note">
-                  {t.loginMastodonIntro}{" "}
-                  <a href="https://joinmastodon.org" target="_blank" rel="noopener noreferrer">
-                    joinmastodon.org
-                  </a>
-                </p>
-              </form>
-            ) : (
-              <div class="instance-preview">
-                {instance.thumbnail && (
-                  <img class="instance-thumb" src={instance.thumbnail} alt="" />
-                )}
-                <div class="instance-title">{instance.title}</div>
-                <div class="instance-uri muted">{instance.uri}</div>
-                {error && <p class="login-error">{error}</p>}
-                <div class="login-actions">
-                  <button
-                    type="button"
-                    class="btn ghost"
-                    onClick={() => {
-                      setInstance(null);
-                      setError(null);
-                    }}
-                  >
-                    {t.back}
+          <div class="login-stage">
+            <div class="login-card glass">
+              {!instance ? (
+                <form onSubmit={(e) => void discover(e)}>
+                  <p class="login-lead">{t.loginSubtitle}</p>
+                  <label class="login-label" htmlFor="instance">
+                    {t.instanceLabel}
+                  </label>
+                  <input
+                    id="instance"
+                    class="field"
+                    placeholder={t.instancePlaceholder}
+                    value={input}
+                    autocomplete="url"
+                    autocapitalize="off"
+                    spellcheck={false}
+                    onInput={(e) => setInput((e.target as HTMLInputElement).value)}
+                    autoFocus
+                  />
+                  <p class="login-hint">{t.instanceHint}</p>
+                  {error && <p class="login-error">{error}</p>}
+                  <button type="submit" class="btn primary block" disabled={busy || !input.trim()}>
+                    {busy ? <span class="spinner" /> : <Icon name="arrow-right-line" size={16} />}
+                    {busy ? t.loginLooking : t.loginButton}
                   </button>
-                  <button
-                    type="button"
-                    class="btn primary"
-                    onClick={() => void startLogin()}
-                    disabled={busy}
-                  >
-                    {busy ? <span class="spinner" /> : null}
-                    {t.loginButton}
-                  </button>
+                  <p class="login-note">
+                    {t.loginMastodonIntro}{" "}
+                    <a href="https://joinmastodon.org" target="_blank" rel="noopener noreferrer">
+                      joinmastodon.org
+                    </a>
+                  </p>
+                </form>
+              ) : (
+                <div class="instance-preview">
+                  {instance.thumbnail && (
+                    <img class="instance-thumb" src={instance.thumbnail} alt="" />
+                  )}
+                  <div class="instance-title">{instance.title}</div>
+                  <div class="instance-uri muted">{instance.uri}</div>
+                  {error && <p class="login-error">{error}</p>}
+                  <div class="login-actions">
+                    <button
+                      type="button"
+                      class="btn ghost"
+                      onClick={() => {
+                        setInstance(null);
+                        setError(null);
+                      }}
+                    >
+                      {t.back}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn primary"
+                      onClick={() => void startLogin()}
+                      disabled={busy}
+                    >
+                      {busy ? <span class="spinner" /> : null}
+                      {t.loginButton}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {store.accounts.length > 0 && (
-              <div class="existing-accounts">
-                <div class="section-title" style={{ padding: "16px 0 8px" }}>
-                  {t.accounts}
+              {store.accounts.length > 0 && (
+                <div class="existing-accounts">
+                  <div class="section-title" style={{ padding: "16px 0 8px" }}>
+                    {t.accounts}
+                  </div>
+                  {store.accounts.map((account) => (
+                    <button
+                      key={account.id}
+                      type="button"
+                      class="list-row"
+                      onClick={() => switchAccount(account.id)}
+                    >
+                      <img class="avatar" src={account.avatar} alt="" width={36} height={36} />
+                      <div class="row-main">
+                        <div class="row-title">{account.displayName}</div>
+                        <div class="row-sub">{account.handle}</div>
+                      </div>
+                      <Icon name="arrow-right-line" size={16} />
+                    </button>
+                  ))}
                 </div>
-                {store.accounts.map((account) => (
-                  <button
-                    key={account.id}
-                    type="button"
-                    class="list-row"
-                    onClick={() => switchAccount(account.id)}
-                  >
-                    <img class="avatar" src={account.avatar} alt="" width={36} height={36} />
-                    <div class="row-main">
-                      <div class="row-title">{account.displayName}</div>
-                      <div class="row-sub">{account.handle}</div>
-                    </div>
-                    <Icon name="arrow-right-line" size={16} />
-                  </button>
-                ))}
-              </div>
-            )}
+              )}
+            </div>
+            <img class="login-cat" src={loginCat} alt="" width={375} height={666} aria-hidden />
           </div>
         </div>
       </main>
