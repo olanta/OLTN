@@ -9,6 +9,10 @@ export function shortcutRoute(shortcut: Shortcut): string {
       return "/p/l";
     case "federated":
       return "/p";
+    case "remote-local":
+      return `/${encodeURIComponent(shortcut.value ?? "")}/p/l`;
+    case "remote-federated":
+      return `/${encodeURIComponent(shortcut.value ?? "")}/p`;
     case "notifications":
       return "/notifications";
     case "mentions":
@@ -44,6 +48,10 @@ export function shortcutLabel(shortcut: Shortcut): string {
       return `#${shortcut.value ?? ""}`;
     case "list":
       return shortcut.label || t.listFallback;
+    case "remote-local":
+      return shortcut.label || `${shortcut.value ?? ""} · ${t.remoteLocal}`;
+    case "remote-federated":
+      return shortcut.label || `${shortcut.value ?? ""} · ${t.remoteFederated}`;
     default:
       return shortcut.label;
   }

@@ -81,6 +81,8 @@ const SHORTCUT_TYPES = new Set([
   "home",
   "local",
   "federated",
+  "remote-local",
+  "remote-federated",
   "notifications",
   "mentions",
   "direct",

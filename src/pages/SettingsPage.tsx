@@ -1,7 +1,6 @@
 import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { useSnapshot } from "valtio";
-import type { Shortcut, ShortcutType } from "../api/types";
 import { t } from "../i18n/pt-BR";
 import { readAltTextSettings, writeAltTextSettings, type AltTextSettings } from "../lib/alt-text";
 import { navigate } from "../lib/router";
@@ -9,7 +8,7 @@ import { normalizeTextSize, TEXT_SIZES } from "../lib/text-size";
 import { PushSettings } from "../components/settings/PushSettings";
 import { Icon } from "../components/ui/Icon";
 import { PageShell } from "../components/ui/PageShell";
-import { resetColumnLayout, saveSettings, saveShortcuts, signOut, syncStream } from "../state/boot";
+import { resetColumnLayout, saveSettings, signOut, syncStream } from "../state/boot";
 import { store, toast } from "../state/store";
 
 const LANGUAGE_OPTIONS = [
@@ -20,10 +19,6 @@ const LANGUAGE_OPTIONS = [
 export function SettingsPage(): JSX.Element {
   const snap = useSnapshot(store);
   const settings = snap.settings;
-  const shortcuts = snap.shortcuts;
-  const [scType, setScType] = useState<ShortcutType>("hashtag");
-  const [scValue, setScValue] = useState("");
-  const [scLabel, setScLabel] = useState("");
   const [altText, setAltText] = useState<AltTextSettings>(() => readAltTextSettings());
 
   const themeOptions = [
@@ -69,21 +64,6 @@ export function SettingsPage(): JSX.Element {
     ["mono", t.fontMono],
   ] as const;
 
-  const shortcutTypes: [ShortcutType, string][] = [
-    ["home", t.home],
-    ["local", t.local],
-    ["federated", t.federated],
-    ["notifications", t.notifications],
-    ["mentions", t.mentions],
-    ["direct", t.messages],
-    ["list", t.lists],
-    ["hashtag", t.hashtag],
-    ["bookmarks", t.bookmarks],
-    ["favourites", t.favourites],
-    ["boosts", t.boosts],
-    ["trending", t.trending],
-  ];
-
   const update = (patch: Partial<typeof settings>): void => {
     store.settings = { ...store.settings, ...patch };
     saveSettings();
@@ -109,22 +89,6 @@ export function SettingsPage(): JSX.Element {
     } catch {
       toast(text);
     }
-  };
-
-  const addShortcut = (e: Event): void => {
-    e.preventDefault();
-    const needsValue = scType === "list" || scType === "hashtag";
-    if (needsValue && !scValue.trim()) return;
-    const shortcut: Shortcut = {
-      id: `${scType}:${scValue.trim() || scType}`,
-      type: scType,
-      label: scLabel.trim() || shortcutTypes.find(([k]) => k === scType)?.[1] || scType,
-      value: needsValue ? scValue.trim() : undefined,
-    };
-    if (shortcuts.some((s) => s.id === shortcut.id)) return;
-    saveShortcuts([...shortcuts, shortcut]);
-    setScValue("");
-    setScLabel("");
   };
 
   return (
@@ -350,53 +314,10 @@ export function SettingsPage(): JSX.Element {
         <section class="settings-section">
           <h1 class="section-title">{t.shortcuts}</h1>
           <p class="muted">{t.shortcutsHint}</p>
-          <div class="shortcut-list">
-            {shortcuts.map((shortcut) => (
-              <div class="shortcut-chip" key={shortcut.id}>
-                <Icon name="pin-line" size={14} />
-                <span>
-                  {shortcut.value ? `${shortcut.label} (${shortcut.value})` : shortcut.label}
-                </span>
-                <button
-                  type="button"
-                  class="icon-btn"
-                  aria-label={t.removeShortcut}
-                  onClick={() => saveShortcuts(shortcuts.filter((s) => s.id !== shortcut.id))}
-                >
-                  <Icon name="close-line" size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-          <form class="shortcut-add" onSubmit={addShortcut}>
-            <select
-              class="field"
-              value={scType}
-              onChange={(e) => setScType((e.target as HTMLSelectElement).value as ShortcutType)}
-            >
-              {shortcutTypes.map(([value, label]) => (
-                <option value={value}>{label}</option>
-              ))}
-            </select>
-            {(scType === "list" || scType === "hashtag") && (
-              <input
-                class="field"
-                placeholder={scType === "list" ? t.listIdPlaceholder : "tag"}
-                value={scValue}
-                onInput={(e) => setScValue((e.target as HTMLInputElement).value)}
-              />
-            )}
-            <input
-              class="field"
-              placeholder={t.shortcutLabelPlaceholder}
-              value={scLabel}
-              onInput={(e) => setScLabel((e.target as HTMLInputElement).value)}
-            />
-            <button type="submit" class="btn primary">
-              <Icon name="plus-line" size={16} />
-              {t.addShortcut}
-            </button>
-          </form>
+          <button type="button" class="btn ghost" onClick={() => navigate("/columns")}>
+            <Icon name="list-check-line" size={16} />
+            {t.manageColumns}
+          </button>
         </section>
 
         <section class="settings-section">

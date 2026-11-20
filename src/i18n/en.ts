@@ -131,7 +131,7 @@ export const en = {
   next: "Next",
   skipToContent: "Skip to content",
   resizePopup: "Resize window",
-  pinHint: "Pin timelines in Settings, under Shortcuts.",
+  pinHint: "Manage columns in Settings or the More menu.",
   pageNotFound: "Page not found",
   goHome: "Go home",
   loginDone: "Login complete. You can close this window.",
@@ -575,9 +575,32 @@ export const en = {
   defaultQuotePolicy: "Who can quote by default",
   defaultQuotePolicyHint: "Private posts can't be quoted.",
   closeColumn: "Close column",
+  manageColumns: "Manage columns",
+  manageColumnsHint: "Choose what appears on the deck.",
+  yourColumns: "Your columns",
+  addColumn: "Add column",
+  addColumnHint: "Pick a timeline type, then name the column if you want.",
+  columnType: "Timeline type",
+  columnName: "Column name",
+  columnNamePlaceholder: "Automatic name",
+  columnExists: "That timeline is already on the deck.",
+  columnAdded: "Column added.",
+  columnValueMissing: "Fill in the field above to add this column.",
+  columnNameRequired: "Enter a name for the column.",
+  emptyColumns: "No columns yet. Add one below.",
+  moveUp: "Move up",
+  moveDown: "Move down",
+  renameColumn: "Rename column",
+  removeColumn: "Remove column",
+  remoteLocal: "Remote local",
+  remoteFederated: "Remote federated",
+  remoteHostPlaceholder: "server.example",
+  chooseList: "Choose a list",
+  noListsForColumn: "Create a list first to add it as a column.",
+  openDeck: "Open deck",
   shortcuts: "Shortcuts",
   shortcutsHint:
-    "Pinned here become columns in multi-column mode (or tabs). In multi, the navigation icons also open columns.",
+    "Choose which timelines appear as deck columns, in what order, and with which names.",
   addShortcut: "Pin timeline",
   listIdPlaceholder: "list id",
   shortcutLabelPlaceholder: "name (optional)",
@@ -769,6 +792,14 @@ export const en = {
     "This is a catalogue of other apps and platforms that speak ActivityPub: video, photos, audio, blogs, events, forums, code and more.\n\nUse it to discover that the fediverse is not only Mastodon. Many of these apps have accounts you can follow from here, depending on what your server accepts.\n\nThe categories at the top filter the list.",
   helpListsText:
     "Lists are groups of accounts you create to organise the people you want to follow. A list can contain only work contacts, friends or accounts about one subject.\n\nOpen Lists, create one, give it a name and add people. The list timeline then shows posts from those accounts without mixing them with the rest of Home.\n\nYou can pin a list as a column. That helps separate subjects without unfollowing anyone.",
+  helpDiscoverText:
+    "Discover is a tab inside Search. It suggests profiles by topic or language, using public posts and account search from your instance. Pick a topic or a language to get a starting list, then open a profile to follow it.\n\nThe lists are suggestions, not a ranking of the whole fediverse, so small instances may show fewer results.",
+  helpColumnsText:
+    "Manage columns defines exactly which timelines open in the deck. Click the OLTN symbol at the top of the side rail, use Settings → Shortcuts, or open Manage columns from the More menu.\n\nAdd Home, Local, Federated, another server's local or federated timeline, hashtags, lists, notifications, mentions, messages, bookmarks, favourites, boosts or trending. Give each column a name, then reorder, rename or remove it.\n\nColumns are saved per account and appear in that order in Columns mode. In Float mode they become movable panels; Social mode uses its own Home tabs.",
+  helpAccountText:
+    "Account collects settings that belong to the signed-in profile: muted words and users, blocked users and domains, privacy and reach, posting defaults, automated deletion, security links and import/export.\n\nChanges here apply to the current account and stay in this browser. Posting defaults fill visibility, sensitive media and quote policy in new posts, but you can still change each post before sending.",
+  helpCleanupText:
+    "Automated deletion is optional and runs locally when OLTN opens, continuing in batches while it stays open. Choose the minimum age and exceptions such as pinned posts, direct messages, polls or media.\n\nMastodon accepts about 30 deletions every 30 minutes; OLTN waits and resumes without losing its place. Deletion is permanent, so review the rules before enabling it.\n\nIt is configured in Account → Automated post deletion.",
   helpBookmarksText:
     "Bookmarks save posts to read later. They are private: only you see the list, and the author is not notified.\n\nTo save a post, open its menu and choose Bookmark. Use the same button to remove it.\n\nLikes and boosts are different: a like is a quick reaction, a boost shares the post with your followers, and a bookmark is just for you.",
   helpScheduledText:
@@ -776,7 +807,7 @@ export const en = {
   helpProfileText:
     "This is your public page: picture, name, bio, posts, followers and the people you follow. It is what others see when they click your name.\n\nUse it to check how your profile looks and to reach your posts. Choose Edit profile to change your picture, name, bio, fields and privacy.",
   helpSettingsText:
-    "This gathers your preferences. Appearance changes the theme, language and desktop layout: Columns, Float or Social. Accessibility changes the text size, font, dark and light text colors, and the Gemini key used to generate alt text.\n\nBehaviour includes live updates, GIF autoplay and other options. Push notifications can be enabled in their own section. Shortcuts lets you pin timelines and choose what appears in the menu. The Account area handles muted words and users, blocks, domains, privacy, automated deletion, security and import/export.\n\nOn phones, the layout is always one column.",
+    "This gathers your preferences. Appearance changes the theme, language and desktop layout: Columns, Float or Social. Accessibility changes the text size, font, dark and light text colors, and the Gemini key used to generate alt text.\n\nBehaviour includes live updates, GIF autoplay and other options. Push notifications can be enabled in their own section. Manage columns lets you choose which timelines appear and in what order. The Account area handles muted words and users, blocks, domains, privacy, automated deletion, security and import/export.\n\nOn phones, the layout is always one column.",
   helpHelpText:
     "This is this screen. It explains the fediverse and each part of OLTN in plain language.\n\nThe footer has the Keyboard shortcuts button. On desktop, press ? at any time to open that list.\n\nIf something is not working, check your connection and try reloading the page. If the error continues, the problem may be on your instance's server.",
   helpEverydayTitle: "Using OLTN day to day",

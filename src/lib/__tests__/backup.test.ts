@@ -138,13 +138,23 @@ describe("sanitizePrefs", () => {
         { id: "home", type: "home", label: "Home" },
         { id: "x", type: "nope", label: "Bad" },
         { id: "tag", type: "hashtag", label: "Tag", value: "masto" },
+        {
+          id: "remote-local:a.example",
+          type: "remote-local",
+          label: "A · Local",
+          value: "a.example",
+        },
       ],
       columnOrder: ["home", 2],
       columnWidths: { home: 420, bad: "wide" },
       floats: { home: { x: 1, y: 2, w: 300, h: 400 }, bad: { x: 1 } },
       colors: { home: "purple", bad: "neon" },
     });
-    expect(prefs.shortcuts.map((shortcut) => shortcut.id)).toEqual(["home", "tag"]);
+    expect(prefs.shortcuts.map((shortcut) => shortcut.id)).toEqual([
+      "home",
+      "tag",
+      "remote-local:a.example",
+    ]);
     expect(prefs.columnOrder).toEqual(["home"]);
     expect(prefs.columnWidths).toEqual({ home: 420 });
     expect(prefs.floats).toEqual({ home: { x: 1, y: 2, w: 300, h: 400 } });

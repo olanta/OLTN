@@ -16,6 +16,7 @@ import { ScheduledPage } from "../pages/ScheduledPage";
 import { TrendingPage } from "../pages/TrendingPage";
 import { NewsletterPage } from "../pages/NewsletterPage";
 import { SettingsPage } from "../pages/SettingsPage";
+import { ManageColumnsPage } from "../pages/ManageColumnsPage";
 import { MessagesPage } from "../pages/MessagesPage";
 import { AccountsPage } from "../pages/AccountsPage";
 import { CollectionPage } from "../pages/CollectionPage";
@@ -52,6 +53,7 @@ export const routes: AppRoute[] = [
   { pattern: "/trending", page: TrendingPage },
   { pattern: "/newsletter", page: NewsletterPage, wide: true },
   { pattern: "/settings", page: SettingsPage, auth: true },
+  { pattern: "/columns", page: ManageColumnsPage, auth: true },
   { pattern: "/account/:section?", page: AccountAreaPage, auth: true },
   { pattern: "/accounts", page: AccountsPage },
   { pattern: "/search", page: SearchPage },

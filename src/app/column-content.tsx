@@ -17,6 +17,10 @@ export function iconForShortcut(shortcut: Shortcut): string {
       return "globe-line";
     case "federated":
       return "rocket-line";
+    case "remote-local":
+      return "globe-line";
+    case "remote-federated":
+      return "rocket-line";
     case "notifications":
       return "notification-line";
     case "mentions":
@@ -59,6 +63,22 @@ export function ColumnContent({
       return <Timeline kind={{ type: "public", local: true }} instance={instance} />;
     case "federated":
       return <Timeline kind={{ type: "public" }} instance={instance} />;
+    case "remote-local":
+      return shortcut.value ? (
+        <Timeline
+          kind={{ type: "public", local: true }}
+          instance={shortcut.value}
+          emptyTitle={t.empty}
+        />
+      ) : (
+        <div />
+      );
+    case "remote-federated":
+      return shortcut.value ? (
+        <Timeline kind={{ type: "public" }} instance={shortcut.value} emptyTitle={t.empty} />
+      ) : (
+        <div />
+      );
     case "notifications":
       return instance ? <NotificationsFeed instance={instance} /> : <div />;
     case "mentions":

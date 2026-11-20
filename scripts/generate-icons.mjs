@@ -48,6 +48,7 @@ const wanted = [
   "arrow-left-line",
   "arrow-right-line",
   "arrow-down-line",
+  "arrow-up-line",
   "eye-line",
   "eye-close-line",
   "translate-line",

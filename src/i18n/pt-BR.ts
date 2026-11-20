@@ -133,7 +133,7 @@ const pt: Record<TKey, string> = {
   next: "Próximo",
   skipToContent: "Pular para o conteúdo",
   resizePopup: "Redimensionar janela",
-  pinHint: "Fixe timelines em Configurações, na seção Atalhos.",
+  pinHint: "Gerencie colunas nas Configurações ou no menu Mais.",
   pageNotFound: "Página não encontrada",
   goHome: "Ir para o início",
   loginDone: "Login concluído. Pode fechar esta janela.",
@@ -579,9 +579,32 @@ const pt: Record<TKey, string> = {
   defaultQuotePolicy: "Quem pode citar por padrão",
   defaultQuotePolicyHint: "Posts privados não podem ser citados.",
   closeColumn: "Fechar coluna",
+  manageColumns: "Gerenciar colunas",
+  manageColumnsHint: "Escolha o que aparece no deck.",
+  yourColumns: "Suas colunas",
+  addColumn: "Adicionar coluna",
+  addColumnHint: "Escolha um tipo de timeline e dê um nome à coluna se quiser.",
+  columnType: "Tipo de timeline",
+  columnName: "Nome da coluna",
+  columnNamePlaceholder: "Nome automático",
+  columnExists: "Essa timeline já está no deck.",
+  columnAdded: "Coluna adicionada.",
+  columnValueMissing: "Preencha o campo acima para adicionar esta coluna.",
+  columnNameRequired: "Informe um nome para a coluna.",
+  emptyColumns: "Nenhuma coluna ainda. Adicione uma abaixo.",
+  moveUp: "Mover para cima",
+  moveDown: "Mover para baixo",
+  renameColumn: "Renomear coluna",
+  removeColumn: "Remover coluna",
+  remoteLocal: "Local remoto",
+  remoteFederated: "Federado remoto",
+  remoteHostPlaceholder: "servidor.exemplo",
+  chooseList: "Escolha uma lista",
+  noListsForColumn: "Crie uma lista primeiro para adicioná-la como coluna.",
+  openDeck: "Abrir deck",
   shortcuts: "Atalhos",
   shortcutsHint:
-    "Fixadas aqui viram colunas no multi-coluna (ou abas). Lá no multi, os ícones da navegação também abrem colunas.",
+    "Escolha quais timelines aparecem como colunas do deck, em qual ordem e com quais nomes.",
   addShortcut: "Fixar timeline",
   listIdPlaceholder: "id da lista",
   shortcutLabelPlaceholder: "nome (opcional)",
@@ -775,6 +798,14 @@ const pt: Record<TKey, string> = {
     "É um catálogo de outros aplicativos e plataformas que falam ActivityPub: vídeo, fotos, áudio, blogs, eventos, fóruns, código e mais.\n\nUse para descobrir que o fediverso não é só Mastodon. Muitos desses apps têm contas que você pode seguir daqui, dependendo do que o seu servidor aceita.\n\nAs categorias no topo filtram a lista.",
   helpListsText:
     "Listas são grupos de contas que você cria para organizar quem quer acompanhar. Uma lista pode ter só contatos de trabalho, amigos ou contas sobre um assunto.\n\nAbra Listas, crie uma, dê um nome e adicione pessoas. A timeline da lista mostra posts dessas contas sem misturar com o resto da Início.\n\nVocê pode fixar uma lista como coluna. Isso ajuda a separar assuntos sem deixar de seguir ninguém.",
+  helpDiscoverText:
+    "Descobrir é uma aba dentro da Busca. Ela sugere perfis por tema ou idioma, usando posts públicos e a busca de contas da sua instância. Escolha um tema ou idioma para receber uma lista inicial e abra um perfil para seguir.\n\nAs listas são sugestões, não um ranking do fediverso inteiro, então instâncias pequenas podem mostrar menos resultados.",
+  helpColumnsText:
+    "Gerenciar colunas define exatamente quais timelines abrem no deck. Clique no símbolo do OLTN no topo da barra lateral, use Configurações → Atalhos ou abra Gerenciar colunas no menu Mais.\n\nAdicione Início, Local, Federação, a timeline local ou federada de outro servidor, hashtags, listas, notificações, menções, mensagens, salvos, curtidas, boosts ou tendências. Dê um nome a cada coluna e depois reordene, renomeie ou remova.\n\nAs colunas ficam salvas por conta e aparecem nessa ordem no modo Colunas. No modo Flutuante elas viram painéis móveis; o modo Social tem abas próprias de Início.",
+  helpAccountText:
+    "A Conta reúne ajustes do perfil conectado: palavras e usuários silenciados, usuários e domínios bloqueados, privacidade e alcance, padrões de publicação, exclusão automática, atalhos de segurança e importação/exportação.\n\nAs mudanças valem para a conta atual e ficam salvas neste navegador. Os padrões de publicação preenchem visibilidade, mídia sensível e política de citação nos novos posts, mas você ainda pode mudar em cada post antes de enviar.",
+  helpCleanupText:
+    "A exclusão automática é opcional e roda localmente quando o OLTN abre, continuando em lotes enquanto ele fica aberto. Escolha a idade mínima e exceções como posts fixados, mensagens diretas, enquetes ou mídia.\n\nO Mastodon aceita cerca de 30 exclusões a cada 30 minutos; o OLTN espera e retoma sem perder o ponto. A exclusão é permanente, então revise as regras antes de ativar.\n\nFica em Conta → Exclusão automática de posts.",
   helpBookmarksText:
     "Salvos guarda posts para ler depois. É privado: só você vê a lista, e a pessoa autora não recebe aviso.\n\nPara salvar, abra o menu do post e escolha Salvar. Use o mesmo botão para remover.\n\nCurtidas e boosts são diferentes: curtir é uma reação rápida, boost compartilha o post com seus seguidores, e salvar é só para você.",
   helpScheduledText:
@@ -782,7 +813,7 @@ const pt: Record<TKey, string> = {
   helpProfileText:
     "É a sua página pública: foto, nome, bio, posts, seguidores e quem você segue. É o que outras pessoas veem quando clicam no seu nome.\n\nUse para conferir como seu perfil aparece e acessar seus posts. Escolha Editar perfil para mudar foto, nome, bio, campos e privacidade.",
   helpSettingsText:
-    "Reúne suas preferências. Aparência muda tema, idioma e layout do computador: Colunas, Flutuante ou Social. Acessibilidade muda o tamanho do texto, a fonte, as cores do texto nos temas escuro e claro e a chave do Gemini usada para gerar alt text.\n\nComportamento inclui atualização ao vivo, autoplay de GIFs e outras opções. Notificações push podem ser ativadas na seção própria. Atalhos permite fixar timelines e escolher o que aparece no menu. A área Conta cuida de palavras e usuários silenciados, bloqueios, domínios, privacidade, exclusão automática, segurança e importação/exportação.\n\nNo celular, o layout é sempre uma coluna.",
+    "Reúne suas preferências. Aparência muda tema, idioma e layout do computador: Colunas, Flutuante ou Social. Acessibilidade muda o tamanho do texto, a fonte, as cores do texto nos temas escuro e claro e a chave do Gemini usada para gerar alt text.\n\nComportamento inclui atualização ao vivo, autoplay de GIFs e outras opções. Notificações push podem ser ativadas na seção própria. Gerenciar colunas permite escolher quais timelines aparecem e em qual ordem. A área Conta cuida de palavras e usuários silenciados, bloqueios, domínios, privacidade, exclusão automática, segurança e importação/exportação.\n\nNo celular, o layout é sempre uma coluna.",
   helpHelpText:
     "É esta tela. Ela explica o fediverso e cada parte do OLTN em linguagem simples.\n\nNo rodapé fica o botão Atalhos de teclado. No computador, aperte ? a qualquer momento para abrir essa lista.\n\nSe algo não estiver funcionando, confira sua conexão e tente recarregar a página. Se o erro continuar, o problema pode estar no servidor da sua instância.",
   helpEverydayTitle: "Usando o OLTN no dia a dia",

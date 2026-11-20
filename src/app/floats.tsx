@@ -15,6 +15,7 @@ import {
 } from "../lib/floats";
 import { orderColumns } from "../lib/layout";
 import { beginPointerDrag } from "../lib/pointer-drag";
+import { navigate } from "../lib/router";
 import { saveFloatLayout, saveShortcuts } from "../state/boot";
 import { accountNS, currentAccount, store } from "../state/store";
 import { ColumnContent, iconForShortcut } from "./column-content";
@@ -230,6 +231,10 @@ export function FloatCanvas(): JSX.Element {
         <div class="center-state">
           <Icon name="list-check-line" size={28} />
           <p>{t.pinHint}</p>
+          <button type="button" class="btn ghost" onClick={() => navigate("/columns")}>
+            <Icon name="list-check-line" size={16} />
+            {t.manageColumns}
+          </button>
         </div>
       )}
     </div>

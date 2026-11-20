@@ -115,6 +115,8 @@ export type ShortcutType =
   | "home"
   | "local"
   | "federated"
+  | "remote-local"
+  | "remote-federated"
   | "notifications"
   | "mentions"
   | "direct"

@@ -363,129 +363,135 @@ function Rail(): JSX.Element | null {
   return (
     <>
       <nav class="rail collapsed" aria-label={t.navHelp}>
-      <Link href="/" class="rail-logo" title="OLTN">
-        <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden>
-          <circle cx="32" cy="34" r="17" fill="none" stroke="currentColor" strokeWidth="7" />
-          <circle cx="32" cy="17" r="8" fill="currentColor" />
-        </svg>
-      </Link>
-      <div class="rail-main">
-        {orderedNav.map((item) => {
-          if (item.action) {
+        <button
+          type="button"
+          class="rail-logo"
+          title={t.manageColumns}
+          aria-label={t.manageColumns}
+          onClick={() => navigate("/columns")}
+        >
+          <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden>
+            <circle cx="32" cy="34" r="17" fill="none" stroke="currentColor" strokeWidth="7" />
+            <circle cx="32" cy="17" r="8" fill="currentColor" />
+          </svg>
+        </button>
+        <div class="rail-main">
+          {orderedNav.map((item) => {
+            if (item.action) {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  class="rail-item help-item"
+                  title={t[item.labelKey]}
+                  aria-label={t[item.labelKey]}
+                  data-nav-id={item.id}
+                  onPointerDown={(e) => startNavDrag(e, item.id)}
+                  onClick={() => {
+                    if (navDragSuppress) return;
+                    store.ui.helpOpen = true;
+                  }}
+                >
+                  <Icon name={item.icon} size={22} />
+                  <span>{t[item.labelKey]}</span>
+                </button>
+              );
+            }
             return (
-              <button
+              <Link
                 key={item.id}
-                type="button"
-                class="rail-item help-item"
+                href={item.href}
+                class={`rail-item ${navActive(item) ? "active" : ""}`}
                 title={t[item.labelKey]}
-                aria-label={t[item.labelKey]}
-                data-nav-id={item.id}
+                ariaCurrent={navActive(item) ? "page" : undefined}
+                draggable={false}
                 onPointerDown={(e) => startNavDrag(e, item.id)}
-                onClick={() => {
-                  if (navDragSuppress) return;
-                  store.ui.helpOpen = true;
+                onClick={(e) => {
+                  if (navDragSuppress) {
+                    e.preventDefault();
+                    return;
+                  }
+                  if (item.popup === "search") {
+                    e.preventDefault();
+                    store.ui.searchOpen = true;
+                    return;
+                  }
+                  // Clicking the button of the page you are on closes it.
+                  if (item.href !== "/" && pathActive(item.href)) {
+                    e.preventDefault();
+                    backOrHome();
+                    return;
+                  }
+                  if (!item.column || mode === "page") return;
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  e.preventDefault();
+                  if (mode === "deck") openColumn(item);
+                  else openFloat(item);
                 }}
               >
-                <Icon name={item.icon} size={22} />
+                <span style={{ position: "relative", display: "grid" }}>
+                  <Icon name={navActive(item) ? item.iconActive : item.icon} size={22} />
+                  {item.badge && state.notifBadge > 0 && (
+                    <span class="badge">{state.notifBadge > 99 ? "99+" : state.notifBadge}</span>
+                  )}
+                </span>
                 <span>{t[item.labelKey]}</span>
-              </button>
+              </Link>
             );
-          }
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              class={`rail-item ${navActive(item) ? "active" : ""}`}
-              title={t[item.labelKey]}
-              ariaCurrent={navActive(item) ? "page" : undefined}
-              draggable={false}
-              onPointerDown={(e) => startNavDrag(e, item.id)}
-              onClick={(e) => {
-                if (navDragSuppress) {
-                  e.preventDefault();
-                  return;
-                }
-                if (item.popup === "search") {
-                  e.preventDefault();
-                  store.ui.searchOpen = true;
-                  return;
-                }
-                // Clicking the button of the page you are on closes it.
-                if (item.href !== "/" && pathActive(item.href)) {
-                  e.preventDefault();
-                  backOrHome();
-                  return;
-                }
-                if (!item.column || mode === "page") return;
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                e.preventDefault();
-                if (mode === "deck") openColumn(item);
-                else openFloat(item);
-              }}
-            >
-              <span style={{ position: "relative", display: "grid" }}>
-                <Icon name={navActive(item) ? item.iconActive : item.icon} size={22} />
-                {item.badge && state.notifBadge > 0 && (
-                  <span class="badge">{state.notifBadge > 99 ? "99+" : state.notifBadge}</span>
-                )}
-              </span>
-              <span>{t[item.labelKey]}</span>
-            </Link>
-          );
-        })}
-      </div>
-      {railShortcuts.length > 0 && (
-        <div class="rail-shortcuts">
-          {railShortcuts.map((shortcut) => (
-            <Link
-              key={shortcut.id}
-              href={shortcutRoute(shortcut)}
-              class={`rail-item ${pathActive(shortcutRoute(shortcut)) ? "active" : ""}`}
-              title={shortcutLabel(shortcut)}
-              ariaCurrent={pathActive(shortcutRoute(shortcut)) ? "page" : undefined}
-              onClick={(e) => {
-                if (mode === "page") return;
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                const index = store.shortcuts.findIndex((s) => s.id === shortcut.id);
-                if (index >= 0 && index < 6) {
-                  e.preventDefault();
-                  if (mode === "deck") scrollToColumn(shortcut.id);
-                  else bringShortcutFront(shortcut.id);
-                }
-              }}
-            >
-              <Icon name={iconForShortcut(shortcut)} size={20} />
-              <span>{shortcutLabel(shortcut)}</span>
-            </Link>
-          ))}
+          })}
         </div>
-      )}
-      <button
-        type="button"
-        class="rail-compose"
-        title={t.composePost}
-        aria-label={t.composePost}
-        onClick={() => setCompose({ mode: "new" })}
-      >
-        <Icon name="pencil-fill" size={20} />
-      </button>
-      {me && account && (
-        <div class="rail-account">
-          <button
-            type="button"
-            class="rail-account-btn"
-            title={t.account}
-            aria-label={t.account}
-            onClick={() => setAccountMenuOpen(true)}
-          >
-            <Avatar
-              src={me.avatarStatic || me.avatar}
-              name={me.displayName || me.username}
-              size={38}
-            />
-          </button>
-        </div>
-      )}
+        {railShortcuts.length > 0 && (
+          <div class="rail-shortcuts">
+            {railShortcuts.map((shortcut) => (
+              <Link
+                key={shortcut.id}
+                href={shortcutRoute(shortcut)}
+                class={`rail-item ${pathActive(shortcutRoute(shortcut)) ? "active" : ""}`}
+                title={shortcutLabel(shortcut)}
+                ariaCurrent={pathActive(shortcutRoute(shortcut)) ? "page" : undefined}
+                onClick={(e) => {
+                  if (mode === "page") return;
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  const index = store.shortcuts.findIndex((s) => s.id === shortcut.id);
+                  if (index >= 0 && index < 6) {
+                    e.preventDefault();
+                    if (mode === "deck") scrollToColumn(shortcut.id);
+                    else bringShortcutFront(shortcut.id);
+                  }
+                }}
+              >
+                <Icon name={iconForShortcut(shortcut)} size={20} />
+                <span>{shortcutLabel(shortcut)}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          class="rail-compose"
+          title={t.composePost}
+          aria-label={t.composePost}
+          onClick={() => setCompose({ mode: "new" })}
+        >
+          <Icon name="pencil-fill" size={20} />
+        </button>
+        {me && account && (
+          <div class="rail-account">
+            <button
+              type="button"
+              class="rail-account-btn"
+              title={t.account}
+              aria-label={t.account}
+              onClick={() => setAccountMenuOpen(true)}
+            >
+              <Avatar
+                src={me.avatarStatic || me.avatar}
+                name={me.displayName || me.username}
+                size={38}
+              />
+            </button>
+          </div>
+        )}
       </nav>
       {accountMenuOpen && <AccountMenu onClose={() => setAccountMenuOpen(false)} />}
     </>
@@ -600,6 +606,10 @@ function MoreMenu({ onClose }: { onClose: () => void }): JSX.Element {
       )}
       <section class="menu-section">
         <h3 class="menu-title">{t.navigation}</h3>
+        <Link href="/columns" class="menu-row" onClick={onClose}>
+          <Icon name="list-check-line" size={18} />
+          <span>{t.manageColumns}</span>
+        </Link>
         <Link href="/account" class="menu-row" onClick={onClose}>
           <Icon name="user-3-line" size={18} />
           <span>{t.account}</span>
@@ -847,6 +857,10 @@ export function MultiColumns(): JSX.Element {
             <div class="center-state">
               <Icon name="list-check-line" size={28} />
               <p>{t.pinHint}</p>
+              <button type="button" class="btn ghost" onClick={() => navigate("/columns")}>
+                <Icon name="list-check-line" size={16} />
+                {t.manageColumns}
+              </button>
             </div>
           </section>
         )}

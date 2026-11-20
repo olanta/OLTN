@@ -36,6 +36,15 @@ export function HomePage(): JSX.Element {
           <button
             type="button"
             class="icon-btn"
+            onClick={() => navigate("/columns")}
+            aria-label={t.manageColumns}
+            title={t.manageColumns}
+          >
+            <Icon name="list-check-line" size={18} />
+          </button>
+          <button
+            type="button"
+            class="icon-btn"
             onClick={() => navigate("/settings")}
             aria-label={t.shortcuts}
           >
