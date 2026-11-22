@@ -1,3 +1,4 @@
+import type { RefObject } from "preact";
 import { useCallback, useEffect, useReducer, useRef, useState } from "preact/hooks";
 import { useSnapshot } from "valtio";
 import type { Status } from "../api/types";
@@ -24,6 +25,36 @@ export function useIsDesktop(): boolean {
     return () => query.removeEventListener("change", onChange);
   }, []);
   return desktop;
+}
+
+/** True while the browser tab is in the foreground. */
+export function usePageVisible(): boolean {
+  const [visible, setVisible] = useState(
+    () => typeof document === "undefined" || document.visibilityState !== "hidden",
+  );
+  useEffect(() => {
+    const onChange = (): void => setVisible(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", onChange);
+    onChange();
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, []);
+  return visible;
+}
+
+/** True while the element is intersecting the viewport (deck columns). */
+export function useElementVisible(ref: RefObject<HTMLElement | null>): boolean {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry?.isIntersecting ?? true),
+      { threshold: 0 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  });
+  return visible;
 }
 
 export function useStatus(key: string): Status | undefined {
@@ -54,6 +85,7 @@ export interface PagedFeedOptions<T> {
 export interface PagedFeed<T> {
   items: readonly T[];
   loading: boolean;
+  ready: boolean;
   loadingMore: boolean;
   error: unknown;
   moreError: unknown;
@@ -142,6 +174,7 @@ export function usePagedFeed<T>(options: PagedFeedOptions<T>): PagedFeed<T> {
   return {
     items: state.items,
     loading: state.loading,
+    ready: state.ready,
     loadingMore: state.loadingMore,
     error: state.error,
     moreError: state.moreError,

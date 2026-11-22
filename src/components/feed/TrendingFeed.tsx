@@ -34,14 +34,20 @@ const TABS: { key: TrendTab; label: () => string }[] = [
 ];
 
 /** Trending tabs: posts, hashtags, people and news. */
-export function TrendingFeed({ instance }: { instance?: string }): JSX.Element {
+export function TrendingFeed({
+  instance,
+  refreshKey = 0,
+}: {
+  instance?: string;
+  refreshKey?: number;
+}): JSX.Element {
   const account = currentAccount();
   const target = instance ?? account?.instance ?? "";
   const [tab, setTab] = useState<TrendTab>("posts");
   const [tags, setTags] = useState<Tag[]>([]);
   const [links, setLinks] = useState<TrendLink[]>([]);
   const [people, setPeople] = useState<TrendingAuthor[]>([]);
-  const revision = useSnapshot(store).ui.feedsRevision;
+  const revision = `${useSnapshot(store).ui.feedsRevision}|${refreshKey}`;
 
   useEffect(() => {
     if (!target || tab !== "hashtags") return;
@@ -107,7 +113,12 @@ export function TrendingFeed({ instance }: { instance?: string }): JSX.Element {
       </div>
 
       {tab === "posts" && (
-        <Timeline kind={{ type: "trending" }} instance={target} emptyTitle={t.emptyTrending} />
+        <Timeline
+          kind={{ type: "trending" }}
+          instance={target}
+          emptyTitle={t.emptyTrending}
+          refreshKey={refreshKey}
+        />
       )}
 
       {tab === "hashtags" &&

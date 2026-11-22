@@ -17,7 +17,7 @@ import { orderColumns } from "../lib/layout";
 import { beginPointerDrag } from "../lib/pointer-drag";
 import { navigate } from "../lib/router";
 import { saveFloatLayout, saveShortcuts } from "../state/boot";
-import { accountNS, currentAccount, store } from "../state/store";
+import { accountNS, clearHomeQueue, currentAccount, store } from "../state/store";
 import { ColumnContent, iconForShortcut } from "./column-content";
 import { PanelColorButton } from "./panel-color";
 import { shortcutLabel } from "./shortcuts";
@@ -201,7 +201,13 @@ export function FloatCanvas(): JSX.Element {
               <h1>{label}</h1>
               <div class="spacer" />
               {shortcut.type === "home" && <HomeGalleryToggle />}
-              <ColumnRefreshButton label={label} />
+              <ColumnRefreshButton
+                label={label}
+                feedKey={shortcut.id}
+                onRefresh={() => {
+                  if (shortcut.type === "home") clearHomeQueue();
+                }}
+              />
               <PanelColorButton id={shortcut.id} color={colors[shortcut.id]} label={label} />
               <button
                 type="button"
@@ -214,7 +220,11 @@ export function FloatCanvas(): JSX.Element {
               </button>
             </header>
             <div class="deck-body">
-              <ColumnContent shortcut={shortcut} instance={account?.instance} />
+              <ColumnContent
+                shortcut={shortcut}
+                instance={account?.instance}
+                refreshKey={snap.ui.feedRevisions[shortcut.id] ?? 0}
+              />
             </div>
             <button
               type="button"

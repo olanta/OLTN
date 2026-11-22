@@ -162,6 +162,9 @@ export const en = {
   // Timeline
   queueOne: "new post",
   queueMany: "new posts",
+  newPosts: "New posts",
+  newNotification: "new notification",
+  newNotifications: "new notifications",
   loadMore: "Load more",
   loadingMore: "Loading…",
   emptyHome: "Your timeline is empty.",
@@ -239,22 +242,6 @@ export const en = {
   newsletterSourceAdd: "Add",
   newsletterSourceNotFound: "Couldn't find that profile on your instance.",
   newsletterFromSources: "Latest from your sources",
-  fediverseApps: "Fediverse Apps",
-  fediverseAppsHint:
-    "Every app here speaks ActivityPub, so you can follow and interact with them from your Mastodon account.",
-  fediverseAppsAll: "All",
-  fediverseAppsVisit: "Visit site",
-  fediverseAppsSource: "Data from fediverse.info",
-  fediverseCatMicroblogging: "Microblogging",
-  fediverseCatVideo: "Video",
-  fediverseCatImage: "Image Sharing",
-  fediverseCatAudio: "Audio",
-  fediverseCatBlogging: "Blogging",
-  fediverseCatEvents: "Events",
-  fediverseCatForums: "Forums",
-  fediverseCatGit: "Code",
-  fediverseCatMessaging: "Messaging",
-  fediverseCatOther: "Other",
   emptyFilters: "No filters configured.",
   filterKeywordPlaceholder: "word or phrase…",
   filterHides: "hides in",
@@ -788,8 +775,6 @@ export const en = {
     "Newsletter combines two things: trending links and posts from profiles that publish news. It is a curated way to catch the headlines without visiting several sites.\n\nThe list starts with a few profiles, and you can add or remove sources. To add one, type @user@server. If you type just @user, OLTN suggests known accounts.\n\nSources are saved per account. Removing a source does not delete old posts; it only stops new posts from being fetched.",
   helpBoostsText:
     "This shows the boosts that appear in your Home timeline: posts that people you follow chose to share again.\n\nIt is different from your likes: this is not what you liked, but what reached you through someone else.\n\nUse it to review what passed through your timeline and find posts you only saw in a hurry.",
-  helpAppsText:
-    "This is a catalogue of other apps and platforms that speak ActivityPub: video, photos, audio, blogs, events, forums, code and more.\n\nUse it to discover that the fediverse is not only Mastodon. Many of these apps have accounts you can follow from here, depending on what your server accepts.\n\nThe categories at the top filter the list.",
   helpListsText:
     "Lists are groups of accounts you create to organise the people you want to follow. A list can contain only work contacts, friends or accounts about one subject.\n\nOpen Lists, create one, give it a name and add people. The list timeline then shows posts from those accounts without mixing them with the rest of Home.\n\nYou can pin a list as a column. That helps separate subjects without unfollowing anyone.",
   helpDiscoverText:

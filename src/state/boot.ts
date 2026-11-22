@@ -401,6 +401,9 @@ export function updateCurrentAccountMeta(
 export async function signIn(account: AccountMeta): Promise<void> {
   store.auth = "loading";
   store.currentAccountId = account.id;
+  store.homeQueue = [];
+  store.notifQueue = [];
+  store.notifBadge = 0;
   saveCurrentAccountId();
   resolveShortcuts();
   try {
@@ -442,6 +445,9 @@ export async function signOut(): Promise<void> {
   disconnectStream?.();
   disconnectStream = null;
   store.stream = "off";
+  store.homeQueue = [];
+  store.notifQueue = [];
+  store.notifBadge = 0;
   if (account) {
     void revokeToken({
       instance: account.instance,

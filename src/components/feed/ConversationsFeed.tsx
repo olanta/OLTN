@@ -20,13 +20,19 @@ function participantNames(conversation: Conversation): string {
   return `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
 }
 
-export function ConversationsFeed({ instance }: { instance?: string }): JSX.Element {
+export function ConversationsFeed({
+  instance,
+  refreshKey = 0,
+}: {
+  instance?: string;
+  refreshKey?: number;
+}): JSX.Element {
   const account = currentAccount();
   const target = instance ?? account?.instance ?? "";
   const revision = useSnapshot(store).ui.feedsRevision;
 
   const feed = usePagedFeed<Conversation>({
-    key: `${target}|${revision}`,
+    key: `${target}|${revision}|${refreshKey}`,
     enabled: !!account && !!target,
     adapter: {
       fetchPage: async (cursor) => {

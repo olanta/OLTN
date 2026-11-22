@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Notification } from "../../api/types";
-import { pushNotification, store } from "../../state/store";
+import {
+  bumpFeedRevision,
+  clearHomeQueue,
+  pushHomeQueue,
+  pushNotification,
+  store,
+} from "../../state/store";
 
 function notif(id: string, type = "favourite"): Notification {
   return { id, type, createdAt: "2026-01-01T00:00:00.000Z" } as unknown as Notification;
@@ -30,5 +36,26 @@ describe("pushNotification", () => {
     expect(store.notifQueue).toHaveLength(40);
     expect(store.notifQueue[0].id).toBe("44");
     expect(store.notifBadge).toBe(45);
+  });
+});
+
+describe("feed refresh scopes", () => {
+  beforeEach(() => {
+    store.ui.feedRevisions = {};
+    store.homeQueue = [];
+  });
+
+  it("bumps only the requested column revision", () => {
+    bumpFeedRevision("home");
+    bumpFeedRevision("local");
+    bumpFeedRevision("home");
+    expect(store.ui.feedRevisions).toEqual({ home: 2, local: 1 });
+  });
+
+  it("clears pending home updates on manual refresh", () => {
+    pushHomeQueue("a");
+    pushHomeQueue("b");
+    clearHomeQueue();
+    expect(store.homeQueue).toEqual([]);
   });
 });

@@ -47,56 +47,93 @@ export function iconForShortcut(shortcut: Shortcut): string {
 export function ColumnContent({
   shortcut,
   instance,
+  refreshKey = 0,
 }: {
   shortcut: Shortcut;
   instance?: string;
+  refreshKey?: number;
 }): JSX.Element {
   const homeGallery = useSnapshot(store).ui.homeGallery;
   switch (shortcut.type) {
     case "home":
       return homeGallery ? (
-        <HomeGallery instance={instance} />
+        <HomeGallery instance={instance} refreshKey={refreshKey} />
       ) : (
-        <Timeline kind={{ type: "home" }} instance={instance} listenQueue />
+        <Timeline kind={{ type: "home" }} instance={instance} listenQueue refreshKey={refreshKey} />
       );
     case "local":
-      return <Timeline kind={{ type: "public", local: true }} instance={instance} />;
+      return (
+        <Timeline
+          kind={{ type: "public", local: true }}
+          instance={instance}
+          refreshKey={refreshKey}
+        />
+      );
     case "federated":
-      return <Timeline kind={{ type: "public" }} instance={instance} />;
+      return <Timeline kind={{ type: "public" }} instance={instance} refreshKey={refreshKey} />;
     case "remote-local":
       return shortcut.value ? (
         <Timeline
           kind={{ type: "public", local: true }}
           instance={shortcut.value}
           emptyTitle={t.empty}
+          refreshKey={refreshKey}
         />
       ) : (
         <div />
       );
     case "remote-federated":
       return shortcut.value ? (
-        <Timeline kind={{ type: "public" }} instance={shortcut.value} emptyTitle={t.empty} />
+        <Timeline
+          kind={{ type: "public" }}
+          instance={shortcut.value}
+          emptyTitle={t.empty}
+          refreshKey={refreshKey}
+        />
       ) : (
         <div />
       );
     case "notifications":
-      return instance ? <NotificationsFeed instance={instance} /> : <div />;
+      return instance ? <NotificationsFeed instance={instance} refreshKey={refreshKey} /> : <div />;
     case "mentions":
-      return instance ? <NotificationsFeed instance={instance} mode="mentions" /> : <div />;
+      return instance ? (
+        <NotificationsFeed instance={instance} mode="mentions" refreshKey={refreshKey} />
+      ) : (
+        <div />
+      );
     case "direct":
-      return instance ? <ConversationsFeed instance={instance} /> : <div />;
+      return instance ? <ConversationsFeed instance={instance} refreshKey={refreshKey} /> : <div />;
     case "bookmarks":
-      return <Timeline kind={{ type: "bookmarks" }} instance={instance} />;
+      return <Timeline kind={{ type: "bookmarks" }} instance={instance} refreshKey={refreshKey} />;
     case "favourites":
-      return <Timeline kind={{ type: "favourites" }} instance={instance} />;
+      return <Timeline kind={{ type: "favourites" }} instance={instance} refreshKey={refreshKey} />;
     case "boosts":
-      return <Timeline kind={{ type: "boosts" }} instance={instance} emptyTitle={t.emptyBoosts} />;
+      return (
+        <Timeline
+          kind={{ type: "boosts" }}
+          instance={instance}
+          emptyTitle={t.emptyBoosts}
+          refreshKey={refreshKey}
+        />
+      );
     case "trending":
-      return <TrendingFeed instance={instance} />;
+      return <TrendingFeed instance={instance} refreshKey={refreshKey} />;
     case "list":
-      return <Timeline kind={{ type: "list", listId: shortcut.value ?? "" }} instance={instance} />;
+      return (
+        <Timeline
+          kind={{ type: "list", listId: shortcut.value ?? "" }}
+          instance={instance}
+          refreshKey={refreshKey}
+        />
+      );
     case "hashtag":
-      return <Timeline kind={{ type: "tag", tag: shortcut.value ?? "" }} instance={instance} />;
+      return (
+        <Timeline
+          kind={{ type: "tag", tag: shortcut.value ?? "" }}
+          instance={instance}
+          refreshKey={refreshKey}
+        />
+      );
     default:
       return <div />;
   }

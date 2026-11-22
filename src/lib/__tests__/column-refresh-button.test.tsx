@@ -6,6 +6,7 @@ import { store } from "../../state/store";
 
 beforeEach(() => {
   store.ui.feedsRevision = 0;
+  store.ui.feedRevisions = {};
   vi.useFakeTimers();
 });
 
@@ -19,14 +20,15 @@ describe("ColumnRefreshButton", () => {
     const host = document.createElement("div");
     document.body.append(host);
     await act(async () => {
-      render(<ColumnRefreshButton label="Home" />, host);
+      render(<ColumnRefreshButton label="Home" feedKey="home" />, host);
     });
     const button = host.querySelector<HTMLButtonElement>("button")!;
 
     await act(async () => {
       button.click();
     });
-    expect(store.ui.feedsRevision).toBe(1);
+    expect(store.ui.feedsRevision).toBe(0);
+    expect(store.ui.feedRevisions.home).toBe(1);
     expect(button.classList.contains("refreshing")).toBe(true);
     expect(button.getAttribute("aria-busy")).toBe("true");
     expect(button.disabled).toBe(true);

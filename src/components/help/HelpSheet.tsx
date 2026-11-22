@@ -66,7 +66,6 @@ export function HelpSheet(): JSX.Element | null {
     { icon: "trending-up-line", title: t.trending, text: t.helpTrendingText },
     { icon: "news-line", title: t.newsletter, text: t.helpNewsletterText },
     { icon: "repeat-line", title: t.boosts, text: t.helpBoostsText },
-    { icon: "planet-line", title: t.fediverseApps, text: t.helpAppsText },
     { icon: "list-check-line", title: t.lists, text: t.helpListsText },
     { icon: "list-check-line", title: t.manageColumns, text: t.helpColumnsText },
     { icon: "bookmark-line", title: t.bookmarks, text: t.helpBookmarksText },

@@ -1,5 +1,5 @@
-import type { JSX, RefObject } from "preact";
-import { useRef } from "preact/hooks";
+import type { JSX } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useSnapshot } from "valtio";
 import { t } from "../../i18n/pt-BR";
 import { userMessageForError } from "../../lib/errors";
@@ -8,11 +8,16 @@ import type { FeedAdapter } from "../../lib/paged-feed";
 import { scrollFeedToTop } from "../../lib/scroll";
 import { snapshotValue } from "../../lib/snapshot";
 import type { Status } from "../../api/types";
-import { currentAccount, putStatuses, statusKey, store } from "../../state/store";
-import { usePagedFeed, type PagedFeed } from "../../state/hooks";
+import { clearHomeQueue, currentAccount, putStatuses, statusKey, store } from "../../state/store";
+import { useElementVisible, usePageVisible, usePagedFeed, type PagedFeed } from "../../state/hooks";
 import { StatusCard } from "../status/StatusCard";
 import { Icon } from "../ui/Icon";
-import { fetchStatusPage, type TimelineKind } from "./timeline-fetch";
+import {
+  fetchStatusPage,
+  fetchTimelineUpdate,
+  timelineSupportsUpdates,
+  type TimelineKind,
+} from "./timeline-fetch";
 import "./feed.css";
 
 interface TimelineProps {
@@ -22,6 +27,8 @@ interface TimelineProps {
   emptyHint?: string;
   listenQueue?: boolean;
   limit?: number;
+  /** Per-column refresh token from ColumnRefreshButton. */
+  refreshKey?: number;
   /** Cached keys hidden from the list (e.g. pinned posts shown above it). */
   excludeKeys?: ReadonlySet<string>;
 }
@@ -43,10 +50,6 @@ function makeTimelineAdapter(
   };
 }
 
-function clearHomeQueue(): void {
-  store.homeQueue = [];
-}
-
 export function Timeline({
   kind,
   instance,
@@ -54,6 +57,7 @@ export function Timeline({
   emptyHint,
   listenQueue = false,
   limit = 20,
+  refreshKey = 0,
   excludeKeys,
 }: TimelineProps): JSX.Element {
   const snap = useSnapshot(store);
@@ -61,8 +65,8 @@ export function Timeline({
   const kindKey = JSON.stringify(kind);
   const account = currentAccount();
   const targetInstance = instance ?? account?.instance ?? "";
-  // Boost feeds also reload when a boost toggle succeeds; the column refresh
-  // button bumps feedsRevision, reloading every mounted feed.
+  // Global invalidation (e.g. cleanup) and boost toggles; the per-column
+  // refresh uses refreshKey so it does not reload the other columns.
   const revision = `|${snap.ui.feedsRevision}${
     kind.type === "boosts" ? `|${snap.ui.boostsRevision}` : ""
   }`;
@@ -73,17 +77,86 @@ export function Timeline({
     : [];
 
   const feed = usePagedFeed<Status>({
-    key: `${kindKey}|${targetInstance}${revision}`,
+    key: `${kindKey}|${targetInstance}|${refreshKey}${revision}`,
     enabled: !!targetInstance,
     adapter: makeTimelineAdapter(kind, limit, targetInstance),
     queue,
     queueMode: "manual",
     onFlushQueue: clearHomeQueue,
   });
+  const [hasUpdates, setHasUpdates] = useState(false);
+  const elementVisible = useElementVisible(rootRef);
+  const pageVisible = usePageVisible();
+  const canCheckUpdates = timelineSupportsUpdates(kind);
+
+  useEffect(() => {
+    setHasUpdates(false);
+  }, [kindKey, targetInstance, refreshKey]);
+
+  useEffect(() => {
+    if (
+      !canCheckUpdates ||
+      !feed.ready ||
+      feed.loading ||
+      feed.loadingMore ||
+      !feed.items.length ||
+      hasUpdates ||
+      !elementVisible ||
+      !pageVisible
+    ) {
+      return;
+    }
+    const latestId = feed.items[0]?.id;
+    if (!latestId) return;
+    let cancelled = false;
+    let timer = 0;
+
+    const check = async (): Promise<void> => {
+      if (cancelled) return;
+      try {
+        const updated = await fetchTimelineUpdate(kind, latestId, clientFor(targetInstance));
+        if (updated) {
+          if (!cancelled) setHasUpdates(true);
+          return;
+        }
+      } catch (err) {
+        console.warn("[oltn] timeline update check failed", err);
+      }
+      if (!cancelled) timer = window.setTimeout(check, updateInterval(rootRef.current));
+    };
+
+    timer = window.setTimeout(check, updateInterval(rootRef.current));
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    canCheckUpdates,
+    feed.ready,
+    feed.loading,
+    feed.loadingMore,
+    feed.items,
+    hasUpdates,
+    elementVisible,
+    pageVisible,
+    kindKey,
+    targetInstance,
+  ]);
+
+  const showUpdates = (): void => {
+    if (hasUpdates) {
+      setHasUpdates(false);
+      if (kind.type === "home") clearHomeQueue();
+      feed.reload();
+    } else {
+      feed.flushQueue();
+    }
+    scrollFeedToTop(rootRef.current);
+  };
 
   return (
     <div class="timeline" ref={rootRef}>
-      <UpdatesPill feed={feed} rootRef={rootRef} />
+      <UpdatesPill feed={feed} hasUpdates={hasUpdates} onShowUpdates={showUpdates} />
       <TimelineBody
         feed={feed}
         emptyTitle={emptyTitle}
@@ -94,25 +167,27 @@ export function Timeline({
   );
 }
 
+function updateInterval(root: HTMLElement | null): number {
+  const scroller = root?.closest(".deck-body") as HTMLElement | null;
+  return (scroller?.scrollTop ?? 0) < 16 ? 15_000 : 30_000;
+}
+
 function UpdatesPill({
   feed,
-  rootRef,
+  hasUpdates,
+  onShowUpdates,
 }: {
   feed: PagedFeed<Status>;
-  rootRef: RefObject<HTMLDivElement | null>;
+  hasUpdates: boolean;
+  onShowUpdates: () => void;
 }): JSX.Element | null {
-  if (!feed.queue.length) return null;
+  if (!feed.queue.length && !hasUpdates) return null;
   return (
-    <button
-      type="button"
-      class="updates-pill"
-      onClick={() => {
-        feed.flushQueue();
-        scrollFeedToTop(rootRef.current);
-      }}
-    >
+    <button type="button" class="updates-pill" onClick={onShowUpdates}>
       <Icon name="arrow-down-line" size={15} />
-      {feed.queue.length} {feed.queue.length === 1 ? t.queueOne : t.queueMany}
+      {feed.queue.length
+        ? `${feed.queue.length} ${feed.queue.length === 1 ? t.queueOne : t.queueMany}`
+        : t.newPosts}
     </button>
   );
 }

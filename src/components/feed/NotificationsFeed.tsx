@@ -1,12 +1,14 @@
 import type { JSX } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 import { useSnapshot } from "valtio";
 import { t } from "../../i18n/pt-BR";
 import { clientFor, hrefFor } from "../../lib/identity";
 import { navigate } from "../../lib/router";
+import { scrollFeedToTop } from "../../lib/scroll";
 import { snapshotValue } from "../../lib/snapshot";
 import type { Collection, Notification, Status } from "../../api/types";
-import { currentAccount, putStatuses, statusKey, store } from "../../state/store";
-import { usePagedFeed } from "../../state/hooks";
+import { currentAccount, pushNotification, putStatuses, statusKey, store } from "../../state/store";
+import { useElementVisible, usePageVisible, usePagedFeed } from "../../state/hooks";
 import { StatusCard } from "../status/StatusCard";
 import { collectionAccountCount } from "../collections/format";
 import { EmojiText } from "../status/EmojiText";
@@ -121,17 +123,24 @@ function CollectionNotificationCard({
 interface NotificationsFeedProps {
   instance: string;
   mode?: "all" | "mentions";
+  refreshKey?: number;
 }
 
-export function NotificationsFeed({ instance, mode = "all" }: NotificationsFeedProps): JSX.Element {
+export function NotificationsFeed({
+  instance,
+  mode = "all",
+  refreshKey = 0,
+}: NotificationsFeedProps): JSX.Element {
   const snap = useSnapshot(store);
   const account = currentAccount();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const visible = useElementVisible(rootRef) && usePageVisible();
   const queue = snap.notifQueue
     .filter((n) => mode === "all" || n.type === "mention")
     .map((n) => snapshotValue<Notification>(n));
 
   const feed = usePagedFeed<Notification>({
-    key: `${instance}|${mode}|${snap.ui.feedsRevision}`,
+    key: `${instance}|${mode}|${snap.ui.feedsRevision}|${refreshKey}`,
     enabled: !!account,
     adapter: {
       fetchPage: async (cursor) => {
@@ -150,112 +159,184 @@ export function NotificationsFeed({ instance, mode = "all" }: NotificationsFeedP
       cursorOf: (notification) => notification.id,
     },
     queue,
-    queueMode: "auto",
-    onReady: (items) => {
-      if (mode === "all") store.notifBadge = 0;
-      const ids = new Set(items.map((n) => n.id));
+    queueMode: "manual",
+    onFlushQueue: () => {
+      const ids = new Set(queue.map((n) => n.id));
       store.notifQueue = store.notifQueue.filter((n) => !ids.has(n.id));
+      if (mode === "all") store.notifBadge = 0;
     },
   });
 
+  useEffect(() => {
+    if (mode !== "all" || !visible || !feed.ready) return;
+    const ids = new Set(feed.items.map((n) => n.id));
+    const remaining = store.notifQueue.filter((n) => !ids.has(n.id));
+    store.notifQueue = remaining;
+    if (!remaining.length) store.notifBadge = 0;
+  }, [mode, visible, feed.ready, feed.items]);
+
+  // Streaming is unavailable/off: check the notifications endpoint instead.
+  useEffect(() => {
+    if (snap.stream === "on" || !visible || !feed.ready || feed.loading || !feed.items.length) {
+      return;
+    }
+    let cursor = feed.items[0]?.id;
+    if (!cursor) return;
+    let cancelled = false;
+    let timer = 0;
+
+    const check = async (): Promise<void> => {
+      if (cancelled) return;
+      try {
+        const page = await clientFor(instance).client.v1.notifications.list({
+          limit: 20,
+          sinceId: cursor,
+          types: mode === "mentions" ? ["mention"] : undefined,
+        });
+        if (page.length && page[0]?.id !== cursor) {
+          putStatuses(
+            page.map((n) => n.status).filter((s): s is Status => !!s),
+            instance,
+          );
+          for (const notification of page) pushNotification(notification);
+          cursor = page[0].id;
+        }
+      } catch (err) {
+        console.warn("[oltn] notification update check failed", err);
+      }
+      if (!cancelled) timer = window.setTimeout(check, 30_000);
+    };
+
+    timer = window.setTimeout(check, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [snap.stream, visible, feed.ready, feed.loading, feed.items, instance, mode]);
+
   const groups = groupNotifications(feed.items);
 
-  if (feed.loading && !feed.items.length) return <TimelineSkeleton />;
+  if (feed.loading && !feed.items.length) {
+    return (
+      <div ref={rootRef}>
+        <TimelineSkeleton />
+      </div>
+    );
+  }
 
   if (feed.error && !feed.items.length) {
     return (
-      <div class="center-state">
-        <Icon name="wifi-off-line" size={28} />
-        <h3>{t.errorLoad}</h3>
-        <button type="button" class="btn ghost" onClick={feed.reload}>
-          <Icon name="refresh-2-line" size={16} />
-          {t.retry}
-        </button>
+      <div ref={rootRef}>
+        <div class="center-state">
+          <Icon name="wifi-off-line" size={28} />
+          <h3>{t.errorLoad}</h3>
+          <button type="button" class="btn ghost" onClick={feed.reload}>
+            <Icon name="refresh-2-line" size={16} />
+            {t.retry}
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!feed.items.length) {
     return (
-      <div class="center-state">
-        <Icon name="notification-line" size={28} />
-        <h3>{mode === "mentions" ? t.emptyMentions : t.emptyNotifications}</h3>
-        <p>{t.emptyHint}</p>
+      <div ref={rootRef}>
+        <div class="center-state">
+          <Icon name="notification-line" size={28} />
+          <h3>{mode === "mentions" ? t.emptyMentions : t.emptyNotifications}</h3>
+          <p>{t.emptyHint}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div class="notifications">
-      {groups.map((group) => {
-        const first = group.items[0];
-        const status = first.status;
-        const collection = "collection" in first ? first.collection : null;
-        const repeated = group.items.length > 1;
-        const time = new Date(first.createdAt);
-        return (
-          <div class={`notif-group type-${group.type}`} key={group.key}>
-            <button
-              type="button"
-              class="notif-head"
-              onClick={() => navigate(hrefFor.accountById(instance, group.account.id))}
-            >
-              <span class="notif-icon">
-                <Icon name={TYPE_ICON[group.type] ?? "notification-line"} size={14} />
-              </span>
-              <Avatar
-                src={group.account.avatar}
-                name={group.account.displayName || group.account.username}
-                size={34}
-              />
-              <span class="notif-text">
-                <strong>
-                  <EmojiText
-                    text={group.account.displayName || group.account.username}
-                    emojis={group.account.emojis}
-                  />
-                </strong>{" "}
-                {typeText(group.type)}
-                {repeated && <span class="notif-count"> +{group.items.length - 1}</span>}
-              </span>
-              <span class="notif-time muted">
-                {time.toLocaleDateString(undefined, { day: "numeric", month: "short" })}
-              </span>
-            </button>
-            {collection && (
-              <CollectionNotificationCard collection={collection} instance={instance} />
-            )}
-            {status && <StatusCard statusKey={statusKey(status)} compact hideHeader />}
-          </div>
-        );
-      })}
-      {feed.moreError ? (
-        <div class="load-more load-more-error">
-          <span class="muted">{t.errorLoad}</span>
-          <button type="button" class="btn ghost" onClick={feed.loadMore}>
-            <Icon name="refresh-2-line" size={16} />
-            {t.retry}
+    <div ref={rootRef}>
+      <div class="notifications">
+        {feed.queue.length > 0 && (
+          <button
+            type="button"
+            class="updates-pill"
+            onClick={() => {
+              feed.flushQueue();
+              scrollFeedToTop(rootRef.current);
+            }}
+          >
+            <Icon name="arrow-down-line" size={15} />
+            {feed.queue.length} {feed.queue.length === 1 ? t.newNotification : t.newNotifications}
           </button>
-        </div>
-      ) : (
-        feed.hasMore && (
-          <div class="load-more">
-            <button
-              type="button"
-              class="btn ghost"
-              disabled={feed.loadingMore}
-              onClick={feed.loadMore}
-            >
-              {feed.loadingMore ? (
-                <span class="spinner" />
-              ) : (
-                <Icon name="dropdown-line" size={16} />
+        )}
+        {groups.map((group) => {
+          const first = group.items[0];
+          const status = first.status;
+          const collection = "collection" in first ? first.collection : null;
+          const repeated = group.items.length > 1;
+          const time = new Date(first.createdAt);
+          return (
+            <div class={`notif-group type-${group.type}`} key={group.key}>
+              <button
+                type="button"
+                class="notif-head"
+                onClick={() => navigate(hrefFor.accountById(instance, group.account.id))}
+              >
+                <span class="notif-icon">
+                  <Icon name={TYPE_ICON[group.type] ?? "notification-line"} size={14} />
+                </span>
+                <Avatar
+                  src={group.account.avatar}
+                  name={group.account.displayName || group.account.username}
+                  size={34}
+                />
+                <span class="notif-text">
+                  <strong>
+                    <EmojiText
+                      text={group.account.displayName || group.account.username}
+                      emojis={group.account.emojis}
+                    />
+                  </strong>{" "}
+                  {typeText(group.type)}
+                  {repeated && <span class="notif-count"> +{group.items.length - 1}</span>}
+                </span>
+                <span class="notif-time muted">
+                  {time.toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                </span>
+              </button>
+              {collection && (
+                <CollectionNotificationCard collection={collection} instance={instance} />
               )}
-              {feed.loadingMore ? t.loadingMore : t.loadMore}
+              {status && <StatusCard statusKey={statusKey(status)} compact hideHeader />}
+            </div>
+          );
+        })}
+        {feed.moreError ? (
+          <div class="load-more load-more-error">
+            <span class="muted">{t.errorLoad}</span>
+            <button type="button" class="btn ghost" onClick={feed.loadMore}>
+              <Icon name="refresh-2-line" size={16} />
+              {t.retry}
             </button>
           </div>
-        )
-      )}
+        ) : (
+          feed.hasMore && (
+            <div class="load-more">
+              <button
+                type="button"
+                class="btn ghost"
+                disabled={feed.loadingMore}
+                onClick={feed.loadMore}
+              >
+                {feed.loadingMore ? (
+                  <span class="spinner" />
+                ) : (
+                  <Icon name="dropdown-line" size={16} />
+                )}
+                {feed.loadingMore ? t.loadingMore : t.loadMore}
+              </button>
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }

@@ -113,3 +113,62 @@ export async function fetchStatusPage(
       return { items: [], hasMore: false };
   }
 }
+
+/** Timelines that can be checked with `since_id` without replacing the feed. */
+export function timelineSupportsUpdates(kind: TimelineKind): boolean {
+  return (
+    kind.type === "home" ||
+    kind.type === "public" ||
+    kind.type === "tag" ||
+    kind.type === "list" ||
+    kind.type === "boosts"
+  );
+}
+
+function hasNewer(list: readonly Status[], sinceId: string): boolean {
+  // Some servers ignore since_id; in that case the first item is the same
+  // newest item that is already in the feed.
+  return list.length > 0 && list[0]?.id !== sinceId;
+}
+
+/**
+ * Asks only for posts newer than the first item currently on screen.
+ * It does not modify the feed; the timeline shows a "new posts" pill and the
+ * user decides when to reload.
+ */
+export async function fetchTimelineUpdate(
+  kind: TimelineKind,
+  sinceId: string,
+  ctx: FetchCtx,
+): Promise<boolean> {
+  const client = ctx.client;
+  const params = { limit: 1, sinceId };
+  switch (kind.type) {
+    case "home":
+      return hasNewer(
+        await client.v1.timelines.home.list({
+          ...params,
+          onlyMedia: !!kind.onlyMedia,
+        }),
+        sinceId,
+      );
+    case "public":
+      return hasNewer(
+        await client.v1.timelines.public.list({
+          ...params,
+          local: kind.local ?? false,
+        }),
+        sinceId,
+      );
+    case "tag":
+      return hasNewer(await client.v1.timelines.tag.$select(kind.tag).list(params), sinceId);
+    case "list":
+      return hasNewer(await client.v1.timelines.list.$select(kind.listId).list(params), sinceId);
+    case "boosts": {
+      const list = await client.v1.timelines.home.list({ ...params, limit: 20 });
+      return list.some((status) => !!status.reblog);
+    }
+    default:
+      return false;
+  }
+}

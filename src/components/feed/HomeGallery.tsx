@@ -1,5 +1,5 @@
 import type { JSX } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useSnapshot } from "valtio";
 import type { Status } from "../../api/types";
 import { t } from "../../i18n/pt-BR";
@@ -7,21 +7,28 @@ import { userMessageForError } from "../../lib/errors";
 import { galleryItems, type GalleryItem } from "../../lib/gallery";
 import { fetchGalleryPage } from "../../lib/gallery-feed";
 import { clientFor } from "../../lib/identity";
+import { scrollFeedToTop } from "../../lib/scroll";
 import { currentAccount, putStatuses, setMediaViewer, statusKey, store } from "../../state/store";
-import { usePagedFeed, type PagedFeed } from "../../state/hooks";
+import { useElementVisible, usePageVisible, usePagedFeed, type PagedFeed } from "../../state/hooks";
 import { Avatar } from "../ui/Avatar";
 import { Icon } from "../ui/Icon";
-import { fetchStatusPage } from "./timeline-fetch";
+import { fetchStatusPage, fetchTimelineUpdate } from "./timeline-fetch";
 import "./home-gallery.css";
 
 const GALLERY_FETCH_LIMIT = 20;
 
 /** Images from the Home timeline, one tile per attachment. */
-export function HomeGallery({ instance }: { instance?: string }): JSX.Element {
+export function HomeGallery({
+  instance,
+  refreshKey = 0,
+}: {
+  instance?: string;
+  refreshKey?: number;
+}): JSX.Element {
   const snap = useSnapshot(store);
   const target = instance ?? currentAccount()?.instance ?? "";
   const feed = usePagedFeed<Status>({
-    key: `home-media|${target}|${snap.ui.feedsRevision}`,
+    key: `home-media|${target}|${snap.ui.feedsRevision}|${refreshKey}`,
     enabled: !!target,
     adapter: {
       fetchPage: async (cursor) => {
@@ -46,6 +53,54 @@ export function HomeGallery({ instance }: { instance?: string }): JSX.Element {
     },
   });
   const items = galleryItems(feed.items);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [hasUpdates, setHasUpdates] = useState(false);
+  const visible = useElementVisible(rootRef) && usePageVisible();
+
+  useEffect(() => {
+    setHasUpdates(false);
+  }, [target, refreshKey]);
+
+  useEffect(() => {
+    if (
+      !visible ||
+      !feed.ready ||
+      feed.loading ||
+      feed.loadingMore ||
+      !feed.items.length ||
+      hasUpdates
+    ) {
+      return;
+    }
+    const latestId = feed.items[0]?.id;
+    if (!latestId) return;
+    let cancelled = false;
+    let timer = 0;
+
+    const check = async (): Promise<void> => {
+      if (cancelled) return;
+      try {
+        const updated = await fetchTimelineUpdate(
+          { type: "home", onlyMedia: true },
+          latestId,
+          clientFor(target),
+        );
+        if (updated) {
+          if (!cancelled) setHasUpdates(true);
+          return;
+        }
+      } catch (err) {
+        console.warn("[oltn] gallery update check failed", err);
+      }
+      if (!cancelled) timer = window.setTimeout(check, 30_000);
+    };
+
+    timer = window.setTimeout(check, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [visible, feed.ready, feed.loading, feed.loadingMore, feed.items, hasUpdates, target]);
 
   if (feed.loading && !feed.items.length) return <GallerySkeleton />;
   if (feed.error && !feed.items.length) {
@@ -70,7 +125,21 @@ export function HomeGallery({ instance }: { instance?: string }): JSX.Element {
   }
 
   return (
-    <div class="home-gallery">
+    <div class="home-gallery" ref={rootRef}>
+      {hasUpdates && (
+        <button
+          type="button"
+          class="updates-pill"
+          onClick={() => {
+            setHasUpdates(false);
+            feed.reload();
+            scrollFeedToTop(rootRef.current);
+          }}
+        >
+          <Icon name="arrow-down-line" size={15} />
+          {t.newPosts}
+        </button>
+      )}
       <div class="home-gallery-head">
         <Icon name="photo-album-line" size={15} />
         <span>{t.homeImages}</span>

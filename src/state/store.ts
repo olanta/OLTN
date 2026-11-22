@@ -84,8 +84,10 @@ export interface AppState {
     homeGallery: boolean;
     /** Bumped on every successful boost toggle; refreshes mounted boosts feeds. */
     boostsRevision: number;
-    /** Bumped by the column refresh button; reloads every mounted feed. */
+    /** Global invalidation (e.g. after automated deletion). */
     feedsRevision: number;
+    /** Per-column refresh revisions, keyed by shortcut id. */
+    feedRevisions: Record<string, number>;
     /** Bumped when a status is pinned/unpinned; reloads profile pinned posts. */
     pinsRevision: number;
   };
@@ -132,6 +134,7 @@ export const store = proxy<AppState>({
     homeGallery: false,
     boostsRevision: 0,
     feedsRevision: 0,
+    feedRevisions: {},
     pinsRevision: 0,
   },
 });
@@ -213,9 +216,18 @@ export function accountNS(account: AccountMeta): string {
   return `${account.id}@${account.instance}`;
 }
 
+/** Reloads one column without touching the other mounted feeds. */
+export function bumpFeedRevision(key: string): void {
+  store.ui.feedRevisions[key] = (store.ui.feedRevisions[key] ?? 0) + 1;
+}
+
 export function pushHomeQueue(key: string): void {
   if (store.homeQueue.includes(key)) return;
   store.homeQueue = [key, ...store.homeQueue].slice(0, 60);
+}
+
+export function clearHomeQueue(): void {
+  store.homeQueue = [];
 }
 
 /** Queues a notification received via streaming (badge included). */

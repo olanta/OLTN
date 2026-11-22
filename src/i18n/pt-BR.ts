@@ -164,6 +164,9 @@ const pt: Record<TKey, string> = {
   // Timeline
   queueOne: "post novo",
   queueMany: "posts novos",
+  newPosts: "Posts novos",
+  newNotification: "notificação nova",
+  newNotifications: "notificações novas",
   loadMore: "Carregar mais",
   loadingMore: "Carregando…",
   emptyHome: "Sua timeline está vazia.",
@@ -242,22 +245,6 @@ const pt: Record<TKey, string> = {
   newsletterSourceAdd: "Adicionar",
   newsletterSourceNotFound: "Não encontrei esse perfil na sua instância.",
   newsletterFromSources: "Últimas das suas fontes",
-  fediverseApps: "Apps do Fediverso",
-  fediverseAppsHint:
-    "Todos os apps aqui falam ActivityPub — dá para seguir e interagir com eles usando sua conta Mastodon.",
-  fediverseAppsAll: "Todos",
-  fediverseAppsVisit: "Visitar site",
-  fediverseAppsSource: "Dados do fediverse.info",
-  fediverseCatMicroblogging: "Microblog",
-  fediverseCatVideo: "Vídeo",
-  fediverseCatImage: "Imagens",
-  fediverseCatAudio: "Áudio",
-  fediverseCatBlogging: "Blogs",
-  fediverseCatEvents: "Eventos",
-  fediverseCatForums: "Fóruns",
-  fediverseCatGit: "Código",
-  fediverseCatMessaging: "Mensagens",
-  fediverseCatOther: "Outros",
   emptyFilters: "Nenhum filtro configurado.",
   filterKeywordPlaceholder: "palavra ou frase…",
   filterHides: "oculta em",
@@ -794,8 +781,6 @@ const pt: Record<TKey, string> = {
     "Junta duas coisas: links em alta e posts de perfis que publicam notícias. É uma forma curada de ver as manchetes sem visitar vários sites.\n\nA lista começa com alguns perfis, e você pode adicionar ou remover fontes. Para adicionar, digite @usuario@servidor. Se digitar só @usuario, o OLTN sugere contas conhecidas.\n\nAs fontes são salvas por conta. Remover uma fonte não apaga posts antigos; só deixa de buscar novos.",
   helpBoostsText:
     "Mostra os boosts que aparecem na sua timeline Início: posts que pessoas que você segue decidiram compartilhar de novo.\n\nÉ diferente das suas curtidas: aqui não está o que você curtiu, mas o que chegou até você por meio de outra pessoa.\n\nUse para rever o que passou pela timeline e encontrar posts que você viu com pressa.",
-  helpAppsText:
-    "É um catálogo de outros aplicativos e plataformas que falam ActivityPub: vídeo, fotos, áudio, blogs, eventos, fóruns, código e mais.\n\nUse para descobrir que o fediverso não é só Mastodon. Muitos desses apps têm contas que você pode seguir daqui, dependendo do que o seu servidor aceita.\n\nAs categorias no topo filtram a lista.",
   helpListsText:
     "Listas são grupos de contas que você cria para organizar quem quer acompanhar. Uma lista pode ter só contatos de trabalho, amigos ou contas sobre um assunto.\n\nAbra Listas, crie uma, dê um nome e adicione pessoas. A timeline da lista mostra posts dessas contas sem misturar com o resto da Início.\n\nVocê pode fixar uma lista como coluna. Isso ajuda a separar assuntos sem deixar de seguir ninguém.",
   helpDiscoverText:

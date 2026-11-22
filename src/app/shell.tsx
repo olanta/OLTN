@@ -1,7 +1,7 @@
 import type { ComponentChildren, JSX } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useSnapshot } from "valtio";
-import type { ShortcutType } from "../api/types";
+import type { Shortcut, ShortcutType } from "../api/types";
 import { ColumnRefreshButton } from "../components/feed/ColumnRefreshButton";
 import { HomeGalleryToggle } from "../components/feed/HomeGalleryToggle";
 import { Icon } from "../components/ui/Icon";
@@ -24,7 +24,14 @@ import { SocialHome, SocialNav, SocialSidebar } from "./social";
 import { FloatCanvas } from "./floats";
 import { PanelColorButton } from "./panel-color";
 import { saveColumnLayout, saveFloatLayout, saveSettings, saveShortcuts } from "../state/boot";
-import { accountNS, currentAccount, setCompose, setMediaViewer, store } from "../state/store";
+import {
+  accountNS,
+  clearHomeQueue,
+  currentAccount,
+  setCompose,
+  setMediaViewer,
+  store,
+} from "../state/store";
 import { useAppState, useIsDesktop } from "../state/hooks";
 
 export function Shell({
@@ -154,13 +161,6 @@ const NAV_ITEMS: {
     column: "boosts",
   },
   {
-    id: "/apps",
-    href: "/apps",
-    icon: "planet-line",
-    iconActive: "planet-fill",
-    labelKey: "fediverseApps",
-  },
-  {
     id: "/l",
     href: "/l",
     icon: "list-check-line",
@@ -259,6 +259,65 @@ function startNavDrag(e: PointerEvent, id: string): void {
         store.settings = { ...store.settings, navOrder: next };
         saveSettings();
       }
+    },
+    onCancel: () => {
+      target.style.transform = "";
+      target.classList.remove("nav-dragging");
+      clearDrop();
+    },
+  });
+}
+
+function startShortcutDrag(e: PointerEvent, id: string): void {
+  const target = e.currentTarget as HTMLElement;
+  const wrap = target.parentElement;
+  if (!wrap) return;
+  const els = [...wrap.querySelectorAll<HTMLElement>("a.rail-item")];
+  if (els.length < 2) return;
+  const ids = store.shortcuts.map((shortcut) => shortcut.id);
+  const extents = els.map((el) => {
+    const r = el.getBoundingClientRect();
+    return { start: r.top, end: r.bottom };
+  });
+  let drop: DropTarget | null = null;
+
+  const clearDrop = (): void => {
+    for (const el of els) el.classList.remove("nav-drop-before", "nav-drop-after");
+  };
+
+  beginPointerDrag(e, {
+    threshold: 6,
+    onStart: () => {
+      target.classList.add("nav-dragging");
+    },
+    onMove: (ctx) => {
+      target.style.transform = `translateY(${ctx.delta.y}px)`;
+      drop = dropTarget(extents, ctx.event.clientY);
+      clearDrop();
+      if (drop) {
+        els[drop.index].classList.add(
+          drop.side === "before" ? "nav-drop-before" : "nav-drop-after",
+        );
+      }
+    },
+    onCommit: () => {
+      target.style.transform = "";
+      target.classList.remove("nav-dragging");
+      clearDrop();
+      if (!drop) return;
+      const targetId = els[drop.index].dataset.shortcutId;
+      if (!targetId) return;
+      navDragSuppress = true;
+      window.setTimeout(() => {
+        navDragSuppress = false;
+      }, 0);
+      const nextIds = moveInOrder(ids, id, targetId, drop.side);
+      if (!nextIds.some((value, index) => value !== ids[index])) return;
+      const byId = new Map(store.shortcuts.map((shortcut) => [shortcut.id, shortcut]));
+      const next = nextIds
+        .map((shortcutId) => byId.get(shortcutId))
+        .filter((shortcut): shortcut is Shortcut => !!shortcut);
+      saveShortcuts(next);
     },
     onCancel: () => {
       target.style.transform = "";
@@ -449,7 +508,13 @@ function Rail(): JSX.Element | null {
                 class={`rail-item ${pathActive(shortcutRoute(shortcut)) ? "active" : ""}`}
                 title={shortcutLabel(shortcut)}
                 ariaCurrent={pathActive(shortcutRoute(shortcut)) ? "page" : undefined}
+                data-shortcut-id={shortcut.id}
+                onPointerDown={(e) => startShortcutDrag(e, shortcut.id)}
                 onClick={(e) => {
+                  if (navDragSuppress) {
+                    e.preventDefault();
+                    return;
+                  }
                   if (mode === "page") return;
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                   const index = store.shortcuts.findIndex((s) => s.id === shortcut.id);
@@ -807,7 +872,13 @@ export function MultiColumns(): JSX.Element {
                 <h1>{shortcutLabel(shortcut)}</h1>
                 <div class="spacer" />
                 {shortcut.type === "home" && <HomeGalleryToggle />}
-                <ColumnRefreshButton label={shortcutLabel(shortcut)} />
+                <ColumnRefreshButton
+                  label={shortcutLabel(shortcut)}
+                  feedKey={shortcut.id}
+                  onRefresh={() => {
+                    if (shortcut.type === "home") clearHomeQueue();
+                  }}
+                />
                 <PanelColorButton
                   id={shortcut.id}
                   color={colors[shortcut.id]}
@@ -824,7 +895,11 @@ export function MultiColumns(): JSX.Element {
                 </button>
               </header>
               <div class="deck-body">
-                <ColumnContent shortcut={shortcut} instance={account?.instance} />
+                <ColumnContent
+                  shortcut={shortcut}
+                  instance={account?.instance}
+                  refreshKey={snap.ui.feedRevisions[shortcut.id] ?? 0}
+                />
               </div>
               <button
                 type="button"
