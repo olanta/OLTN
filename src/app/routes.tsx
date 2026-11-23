@@ -39,6 +39,7 @@ export const routes: AppRoute[] = [
   { pattern: "/", page: HomePage, auth: true },
   { pattern: "/timeseries", page: TimeseriesPage, auth: true, wide: true },
   { pattern: "/notifications", page: NotificationsPage, auth: true },
+  { pattern: "/notifications/grouped", page: NotificationsPage, auth: true },
   { pattern: "/mentions", page: MentionsRoute, auth: true },
   { pattern: "/messages", page: MessagesPage, auth: true },
   { pattern: "/b", page: BookmarksPage, auth: true },

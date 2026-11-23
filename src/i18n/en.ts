@@ -35,6 +35,7 @@ export const en = {
   edit: "Edit",
   confirm: "Confirm",
   notifications: "Notifications",
+  notificationsGrouped: "Grouped",
   mentions: "Mentions",
   mention: "Mention",
   bookmarks: "Bookmarks",
@@ -762,7 +763,7 @@ export const en = {
   helpLocalText:
     "This shows public posts from accounts that live on the same server as you. You do not need to follow them: it is like reading the noticeboard of your own town.\n\nIt is useful for discovering new people and understanding what your instance is talking about. If your server is small, there may not be much movement.\n\nThe Federated page is similar, but brings public posts your server already knows, including those from other servers. It is not the whole fediverse, because no server can see everything.",
   helpNotificationsText:
-    "This gathers what happened to you: who liked, boosted, followed, mentioned or replied to you, plus polls and other alerts.\n\nUse it to see what needs your attention. Mentions is a separate screen with only the posts that tagged @you.\n\nThe number on the icon tells you there is something new.",
+    "This gathers what happened to you: who liked, boosted, followed, mentioned or replied to you, plus polls and other alerts.\n\nUse All for the complete history or Grouped to combine favourites, boosts and follows by target. Mentions is a separate screen with only the posts that tagged @you.\n\nThe number on the icon tells you there is something new.",
   helpMentionsText:
     "This shows posts and replies where someone tagged @your_username. It works like an inbox for public conversations: you see the message and can reply in the same thread.\n\nIt is the part of Notifications dedicated to conversations, so it is harder to miss a question or answer.",
   helpMessagesText:

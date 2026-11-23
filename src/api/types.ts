@@ -27,6 +27,23 @@ export type CollectionWithAccounts = mastodon.v1.CollectionWithAccounts;
 export type CreateCollectionParams = mastodon.rest.v1.CreateCollectionParams;
 export type UpdateCollectionParams = mastodon.rest.v1.UpdateCollectionParams;
 export type Notification = mastodon.v1.Notification;
+export interface GroupedNotificationGroup {
+  groupKey: string;
+  notificationsCount: number;
+  type: string;
+  mostRecentNotificationId: string;
+  pageMinId?: string;
+  pageMaxId?: string;
+  latestPageNotificationAt?: string;
+  sampleAccountIds: string[];
+  statusId?: string;
+}
+
+export interface GroupedNotificationsResult {
+  accounts: Account[];
+  statuses: Status[];
+  notificationGroups: GroupedNotificationGroup[];
+}
 export type MediaAttachment = mastodon.v1.MediaAttachment;
 export type Poll = mastodon.v1.Poll;
 export type PreviewCard = mastodon.v1.PreviewCard;

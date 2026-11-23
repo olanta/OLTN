@@ -16,7 +16,7 @@ import { Avatar } from "../ui/Avatar";
 import { Icon } from "../ui/Icon";
 import { TimelineSkeleton } from "../feed/Timeline";
 
-const TYPE_ICON: Record<string, string> = {
+export const TYPE_ICON: Record<string, string> = {
   mention: "at-line",
   status: "quill-pen-line",
   reblog: "repeat-line",
@@ -33,7 +33,7 @@ const TYPE_ICON: Record<string, string> = {
   moderation_warning: "information-line",
 };
 
-function typeText(type: string): string {
+export function notificationTypeText(type: string): string {
   switch (type) {
     case "mention":
       return t.notifMention;
@@ -295,7 +295,7 @@ export function NotificationsFeed({
                       emojis={group.account.emojis}
                     />
                   </strong>{" "}
-                  {typeText(group.type)}
+                  {notificationTypeText(group.type)}
                   {repeated && <span class="notif-count"> +{group.items.length - 1}</span>}
                 </span>
                 <span class="notif-time muted">

@@ -3,6 +3,7 @@ import { useSnapshot } from "valtio";
 import type { Shortcut } from "../api/types";
 import { ConversationsFeed } from "../components/feed/ConversationsFeed";
 import { HomeGallery } from "../components/feed/HomeGallery";
+import { NotificationsColumn } from "../components/feed/NotificationsColumn";
 import { NotificationsFeed } from "../components/feed/NotificationsFeed";
 import { Timeline } from "../components/feed/Timeline";
 import { TrendingFeed } from "../components/feed/TrendingFeed";
@@ -94,7 +95,11 @@ export function ColumnContent({
         <div />
       );
     case "notifications":
-      return instance ? <NotificationsFeed instance={instance} refreshKey={refreshKey} /> : <div />;
+      return instance ? (
+        <NotificationsColumn instance={instance} refreshKey={refreshKey} />
+      ) : (
+        <div />
+      );
     case "mentions":
       return instance ? (
         <NotificationsFeed instance={instance} mode="mentions" refreshKey={refreshKey} />

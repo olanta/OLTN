@@ -1,15 +1,26 @@
 import type { JSX } from "preact";
 import { t } from "../i18n/pt-BR";
 import { navigate, useRouter } from "../lib/router";
+import { GroupedNotificationsFeed } from "../components/feed/GroupedNotificationsFeed";
 import { NotificationsFeed } from "../components/feed/NotificationsFeed";
 import { Icon } from "../components/ui/Icon";
 import { PageShell } from "../components/ui/PageShell";
 import { currentAccount } from "../state/store";
 
-export function NotificationsPage({ mode }: { mode?: "all" | "mentions" }): JSX.Element {
+export function NotificationsPage({
+  mode,
+}: {
+  mode?: "all" | "grouped" | "mentions";
+}): JSX.Element {
   const account = currentAccount();
   const route = useRouter();
-  const active = mode ?? (route.path === "/mentions" ? "mentions" : "all");
+  const active =
+    mode ??
+    (route.path === "/mentions"
+      ? "mentions"
+      : route.path === "/notifications/grouped"
+        ? "grouped"
+        : "all");
 
   if (!account) {
     return (
@@ -37,13 +48,24 @@ export function NotificationsPage({ mode }: { mode?: "all" | "mentions" }): JSX.
         </button>
         <button
           type="button"
+          class={`subtab ${active === "grouped" ? "active" : ""}`}
+          onClick={() => navigate("/notifications/grouped")}
+        >
+          {t.notificationsGrouped}
+        </button>
+        <button
+          type="button"
           class={`subtab ${active === "mentions" ? "active" : ""}`}
           onClick={() => navigate("/mentions")}
         >
           {t.mentions}
         </button>
       </div>
-      <NotificationsFeed instance={account.instance} mode={active} />
+      {active === "grouped" ? (
+        <GroupedNotificationsFeed instance={account.instance} />
+      ) : (
+        <NotificationsFeed instance={account.instance} mode={active} />
+      )}
     </PageShell>
   );
 }

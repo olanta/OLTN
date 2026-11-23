@@ -37,6 +37,7 @@ const pt: Record<TKey, string> = {
   edit: "Editar",
   confirm: "Confirmar",
   notifications: "Notificações",
+  notificationsGrouped: "Agrupadas",
   mentions: "Menções",
   mention: "Mencionar",
   bookmarks: "Salvos",
@@ -768,7 +769,7 @@ const pt: Record<TKey, string> = {
   helpLocalText:
     "Mostra posts públicos de contas que vivem no mesmo servidor que o seu. Você não precisa segui-las: é como ler o mural da sua cidade.\n\nServe para descobrir gente nova e entender o assunto da sua instância. Se o seu servidor for pequeno, pode ter pouco movimento.\n\nA página Federação é parecida, mas mostra posts públicos que o seu servidor já conhece, inclusive os que vêm de outros servidores. Ela não é o fediverso inteiro, porque nenhum servidor consegue ver tudo.",
   helpNotificationsText:
-    "Reúne o que aconteceu com você: quem curtiu, deu boost, seguiu, mencionou ou respondeu, além de enquetes e outros avisos.\n\nUse para ver o que precisa da sua atenção. Menções é uma tela separada, só com posts que marcaram @voce.\n\nO número no ícone avisa que há novidade.",
+    "Reúne o que aconteceu com você: quem curtiu, deu boost, seguiu, mencionou ou respondeu, além de enquetes e outros avisos.\n\nUse Todas para o histórico completo ou Agrupadas para juntar curtidas, boosts e seguidores pelo mesmo alvo. Menções é uma tela separada, só com posts que marcaram @voce.\n\nO número no ícone avisa que há novidade.",
   helpMentionsText:
     "Mostra posts e respostas em que alguém marcou @seu_usuario. Funciona como uma caixa de entrada de conversas públicas: você vê a mensagem e pode responder na mesma thread.\n\nÉ a parte de Notificações dedicada a conversas, para não perder perguntas e respostas.",
   helpMessagesText:
